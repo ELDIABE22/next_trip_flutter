@@ -3,7 +3,7 @@ import '../constants/app_constants_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final double? width;
   final Color? backgroundColor;
   final Color? textColor;
@@ -36,7 +36,9 @@ class CustomButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
-            backgroundColor: backgroundColor ?? AppConstantsColors.buttonColor1,
+            disabledBackgroundColor: Colors.grey.withValues(alpha: 0.3),
+            disabledForegroundColor: Colors.grey.withValues(alpha: 0.5),
+            backgroundColor: backgroundColor ?? Colors.black,
             foregroundColor: textColor ?? AppConstantsColors.textColorWhite,
             padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
             shape: RoundedRectangleBorder(

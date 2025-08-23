@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/features/destinations/presentation/pages/country_list_page.dart';
-import 'package:next_trip/features/destinations/presentation/widgets/country_selector.dart';
+import 'package:next_trip/features/destinations/presentation/pages/city_list_page.dart';
+import 'package:next_trip/features/destinations/presentation/widgets/country_selector_widget.dart';
 
-class SearchCountryPage extends StatelessWidget {
+class SearchCountryPage extends StatefulWidget {
   const SearchCountryPage({super.key});
+
+  @override
+  State<SearchCountryPage> createState() => _SearchCountryPageState();
+}
+
+class _SearchCountryPageState extends State<SearchCountryPage> {
+  String selectedCountry = "Seleccionar";
 
   @override
   Widget build(BuildContext context) {
@@ -57,21 +65,37 @@ class SearchCountryPage extends StatelessWidget {
                       SizedBox(height: 20),
 
                       CountrySelector(
-                        text: "Seleccionar",
+                        text: selectedCountry,
                         icon: Icons.language,
-                        onPressed: () {
-                          Navigator.push(
+                        onPressed: () async {
+                          final result = await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => const CountryListPage(),
                             ),
                           );
+                          
+                          if (result != null) {
+                            setState(() {
+                              selectedCountry = result;
+                            });
+                          }
                         },
                       ),
 
                       SizedBox(height: 20),
 
-                      CustomButton(text: "Continuar", onPressed: () {}),
+                      CustomButton(
+                        text: "Continuar",
+                        onPressed: selectedCountry != "Seleccionar" ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CityListPage(),
+                            ),
+                          );
+                        } : null,
+                      ),
                     ],
                   ),
                 ),
