@@ -90,11 +90,6 @@ class CountryListPage extends StatelessWidget {
               ],
             ),
           ),
-          // Positioned(
-          //   bottom: -5,
-          //   right: -80,
-          //   child: Image.asset("assets/images/logo-app.webp", width: 200),
-          // ),
         ],
       ),
     );
