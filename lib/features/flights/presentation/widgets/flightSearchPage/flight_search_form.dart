@@ -56,11 +56,20 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 5),
 
           // Input Fields
           Row(
             children: [
+              Expanded(
+                child: InputField(
+                  label: 'Origen',
+                  value: 'Barranquilla',
+                  icon: Icons.flight_takeoff,
+                  enabled: true,
+                ),
+              ),
+              const SizedBox(width: 5),
               Expanded(
                 child: GestureDetector(
                   onTap: () {
@@ -72,25 +81,16 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
                     );
                   },
                   child: InputField(
-                    label: 'Origen',
-                    value: 'Barranquilla',
-                    icon: Icons.flight_takeoff,
+                    label: 'Destino',
+                    value: 'Bogotá',
+                    icon: Icons.flight_land,
                     enabled: true,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: InputField(
-                  label: 'Destino',
-                  value: 'Bogotá',
-                  icon: Icons.flight_land,
-                  enabled: true,
-                ),
-              ),
             ],
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 5),
 
           isOneWay
               ? InputField(
@@ -109,7 +109,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
                         enabled: true,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 5),
                     Expanded(
                       child: InputField(
                         label: 'Vuelta',
@@ -120,7 +120,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
                     ),
                   ],
                 ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 5),
 
           InputField(
             label: 'Pasajeros',
@@ -129,7 +129,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
             enabled: true,
             onTap: () => showPassengerSelector(),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
 
           // Search Button
           CustomButton(text: "Buscar vuelos", onPressed: () {}),

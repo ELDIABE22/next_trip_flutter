@@ -29,7 +29,7 @@ class HotelAttributeTag extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: textColor ?? Colors.white,
+              color: textColor ?? const Color(0xFFFFFFFF),
               fontSize: 10,
               fontWeight: FontWeight.w400,
             ),

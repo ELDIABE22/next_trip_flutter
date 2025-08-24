@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/page_layout.dart';
+import 'package:next_trip/features/cars/presentation/widgets/carSearchPage/car_card.dart';
+import 'package:next_trip/features/cars/presentation/widgets/carSearchPage/car_search_form.dart';
 
 class CarSearchPage extends StatefulWidget {
   const CarSearchPage({super.key});
@@ -20,10 +22,20 @@ class _CarSearchPageState extends State<CarSearchPage> {
   @override
   Widget build(BuildContext context) {
     return PageLayout(
-      title: 'Tu movilidad comienza aquí: encuentra y reserva el vehículo perfecto para tu viaje.',
+      title:
+          'Tu aventura sobre ruedas comienza aquí: elige y reserva tu carro ideal',
       selectedIndex: selectedIndex,
       onItemTapped: onItemTapped,
-      child: Text("Carros"),
+      children: [
+        CarSearchForm(),
+        const SizedBox(height: 20),
+        Column(
+          children: List.generate(
+            5,
+            (index) => Column(children: [CarCard(), SizedBox(height: 20)]),
+          ),
+        ),
+      ],
     );
   }
 }
