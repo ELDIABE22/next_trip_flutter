@@ -34,7 +34,9 @@ class FlightResult extends StatelessWidget {
         ),
         const SizedBox(height: 20),
 
-        Column(children: List.generate(5, (index) => FlightCard())),
+        Column(
+          children: List.generate(5, (index) => FlightCard(total: "278.550")),
+        ),
       ],
     );
   }
