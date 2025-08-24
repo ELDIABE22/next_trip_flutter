@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
+import 'package:next_trip/core/widgets/appbar.dart';
+import 'package:next_trip/core/widgets/input.dart';
 import 'package:next_trip/features/destinations/presentation/widgets/country_item_widget.dart';
 
 class CountryListPage extends StatelessWidget {
@@ -22,19 +24,7 @@ class CountryListPage extends StatelessWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Seleccionar país",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            color: Colors.black,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.black),
-        elevation: 0,
-      ),
+      appBar: Appbar(title: "Seleccionar país"),
       body: Stack(
         children: [
           Container(
@@ -55,20 +45,7 @@ class CountryListPage extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                const TextField(
-                  // controller: _controller,
-                  decoration: InputDecoration(
-                    labelText: "Buscar país",
-                    labelStyle: TextStyle(color: Color(0xFF9C9C9C)),
-                    filled: true,
-                    fillColor: Color(0xFFF4F4F4),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide.none,
-                    ),
-                    suffixIcon: Icon(Icons.search),
-                  ),
-                ),
+                Input(labelText: "Buscar país", icon: Icon(Icons.search)),
 
                 const SizedBox(height: 20),
 

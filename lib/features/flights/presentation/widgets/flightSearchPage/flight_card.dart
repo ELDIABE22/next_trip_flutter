@@ -17,10 +17,12 @@ class FlightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const FlightSeatsPage()),
-        );
+        if (passengersText == null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const FlightSeatsPage()),
+          );
+        }
       },
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),

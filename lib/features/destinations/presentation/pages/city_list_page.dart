@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
+import 'package:next_trip/core/widgets/appbar.dart';
+import 'package:next_trip/core/widgets/input.dart';
 import 'package:next_trip/features/destinations/presentation/widgets/city_card_widget.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_search_page.dart';
 
@@ -25,19 +27,7 @@ class CityListPage extends StatelessWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        title: const Text(
-          "Seleccionar ciudad",
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w800,
-            color: Colors.black,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.black),
-        elevation: 0,
-      ),
+      appBar: Appbar(title: "Seleccionar ciudad"),
       body: Stack(
         children: [
           Positioned(
@@ -63,19 +53,7 @@ class CityListPage extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                const TextField(
-                  decoration: InputDecoration(
-                    labelText: "Buscar ciudad",
-                    labelStyle: TextStyle(color: Color(0xFF9C9C9C)),
-                    filled: true,
-                    fillColor: Color(0xFFF4F4F4),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
-                      borderSide: BorderSide.none,
-                    ),
-                    suffixIcon: Icon(Icons.search),
-                  ),
-                ),
+                Input(labelText: "Buscar ciudad", icon: Icon(Icons.search)),
 
                 const SizedBox(height: 20),
 
