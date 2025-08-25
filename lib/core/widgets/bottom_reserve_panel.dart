@@ -2,7 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
 
 class BottomReservePanel extends StatelessWidget {
-  const BottomReservePanel({super.key});
+  final String totalPrice;
+  final String dateRange;
+  final String buttonText;
+
+  const BottomReservePanel({
+    super.key,
+    required this.totalPrice,
+    required this.dateRange,
+    required this.buttonText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +24,10 @@ class BottomReservePanel extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border(
-              top: BorderSide(width: 1, color: const Color.fromARGB(255, 161, 161, 161)),
+              top: BorderSide(
+                width: 1,
+                color: const Color.fromARGB(255, 161, 161, 161),
+              ),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
@@ -36,7 +48,7 @@ class BottomReservePanel extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "\$4,710,000 COP",
+                        totalPrice,
                         style: TextStyle(
                           fontSize: 20,
                           color: Colors.black,
@@ -45,7 +57,7 @@ class BottomReservePanel extends StatelessWidget {
                       ),
                       // SizedBox(height: 5),
                       Text(
-                        "por 6 noches 10 - 16 de nov",
+                        dateRange,
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[500],
@@ -59,7 +71,7 @@ class BottomReservePanel extends StatelessWidget {
               SizedBox(width: 15),
               SizedBox(
                 width: 160,
-                child: CustomButton(text: "Reservar", onPressed: () {}),
+                child: CustomButton(text: buttonText, onPressed: () {}),
               ),
             ],
           ),

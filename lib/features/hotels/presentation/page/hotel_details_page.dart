@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
-import 'package:next_trip/features/hotels/presentation/widgets/hotelSearchPage/bottom_reserve_panel.dart';
+import 'package:next_trip/core/widgets/bottom_reserve_panel.dart';
 import 'package:next_trip/features/hotels/presentation/widgets/hotelSearchPage/hotel_attribute_card.dart';
 import 'package:next_trip/features/hotels/presentation/widgets/hotelSearchPage/hotel_calendar.dart';
 
@@ -11,7 +11,9 @@ class HotelDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Appbar(title: "Detalles del hotel"),
+      extendBodyBehindAppBar: true,
+      appBar: Appbar(isTransparent: true, iconColor: Colors.white),
+      // appBar: Appbar(title: "Detalles del hotel"),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -29,7 +31,7 @@ class HotelDetailsPage extends StatelessWidget {
                       child: Image.asset(
                         'assets/images/hotel.webp',
                         width: double.infinity,
-                        height: 300,
+                        height: 350,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -228,7 +230,11 @@ class HotelDetailsPage extends StatelessWidget {
             ),
           ),
 
-          BottomReservePanel(),
+          BottomReservePanel(
+            totalPrice: '\$4,710,000 COP',
+            dateRange: 'por 6 noches 10 - 16 de nov',
+            buttonText: 'Reservar',
+          ),
         ],
       ),
     );

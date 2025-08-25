@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:next_trip/features/cars/presentation/pages/car_datails_page.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carSearchPage/car_attribute_tag.dart';
 
 class CarCard extends StatelessWidget {
@@ -7,6 +8,12 @@ class CarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CarDetailsPage()),
+        );
+      },
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -91,7 +98,7 @@ class CarCard extends StatelessWidget {
                           SizedBox(width: 10),
                           CarAttributeTag(title: "3", icon: Icons.work),
                           SizedBox(width: 10),
-                          CarAttributeTag(title: "2", icon: Icons.home),
+                          CarAttributeTag(title: "2", icon: Icons.meeting_room),
                           SizedBox(width: 10),
                           CarAttributeTag(
                             title: "A",

@@ -24,7 +24,7 @@ class CountryListPage extends StatelessWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: Appbar(title: "Seleccionar país"),
+      appBar: Appbar(title: "Seleccionar país",),
       body: Stack(
         children: [
           Container(
