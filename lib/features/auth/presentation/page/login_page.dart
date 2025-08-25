@@ -4,6 +4,7 @@ import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/core/widgets/header.dart';
 import 'package:next_trip/core/widgets/input.dart';
 import 'package:next_trip/features/auth/presentation/page/register_page.dart';
+import 'package:next_trip/features/flights/presentation/pages/flight_search_page.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -71,7 +72,14 @@ class LoginPage extends StatelessWidget {
                         SizedBox(height: 20),
                         CustomButton(
                           text: "Acceder",
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const FlightSearchPage(),
+                              ),
+                            );
+                          },
                           backgroundColor: Colors.white,
                           textColor: Colors.black,
                         ),
@@ -118,7 +126,15 @@ class LoginPage extends StatelessWidget {
                           width: double.infinity,
                           height: 60,
                           child: OutlinedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const FlightSearchPage(),
+                                ),
+                              );
+                            },
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(color: Colors.black12),
                               shape: RoundedRectangleBorder(

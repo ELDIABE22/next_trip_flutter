@@ -5,6 +5,7 @@ import 'package:next_trip/features/auth/presentation/page/register_page.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_search_page.dart';
 import 'package:next_trip/features/hotels/presentation/page/hotel_search_page.dart';
 import 'package:next_trip/features/cars/presentation/pages/car_search_page.dart';
+import 'package:next_trip/features/home/presentation/page/home_page.dart';
 
 void main() {
   runApp(const MainApp());
@@ -17,8 +18,9 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(textTheme: GoogleFonts.promptTextTheme()),
-      initialRoute: '/register',
+      initialRoute: '/home',
       routes: {
+        '/home': (context) => const HomePage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
         '/flights': (context) => const FlightSearchPage(),

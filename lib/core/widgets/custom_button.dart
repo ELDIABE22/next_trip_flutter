@@ -7,6 +7,7 @@ class CustomButton extends StatelessWidget {
   final double? width;
   final Color? backgroundColor;
   final Color? textColor;
+  final Color? borderColor;
 
   const CustomButton({
     super.key,
@@ -15,6 +16,7 @@ class CustomButton extends StatelessWidget {
     this.width,
     this.backgroundColor,
     this.textColor,
+    this.borderColor,
   });
 
   @override
@@ -32,6 +34,9 @@ class CustomButton extends StatelessWidget {
             ),
           ],
           borderRadius: BorderRadius.circular(25),
+          border: borderColor != null
+              ? Border.all(color: borderColor!, width: 1.5)
+              : null,
         ),
         child: ElevatedButton(
           onPressed: onPressed,
