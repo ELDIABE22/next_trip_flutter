@@ -3,6 +3,7 @@ import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/core/widgets/header.dart';
 import 'package:next_trip/core/widgets/input.dart';
+import 'package:next_trip/features/auth/presentation/page/register_page.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -163,14 +164,24 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                         SizedBox(width: 5),
-                        Text(
-                          "Registrarse",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RegisterPage(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            "Registrarse",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.white,
+                            ),
                           ),
                         ),
                       ],
