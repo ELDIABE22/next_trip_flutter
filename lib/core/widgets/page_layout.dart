@@ -17,7 +17,10 @@ class PageLayout extends StatelessWidget {
     this.children,
     required this.selectedIndex,
     required this.onItemTapped,
-  }) : assert(child != null || children != null, 'Either child or children must be provided');
+  }) : assert(
+         child != null || children != null,
+         'Either child or children must be provided',
+       );
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +28,7 @@ class PageLayout extends StatelessWidget {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          Header(),
+          Header(containerHeight: 120, imageSize: 150, top: -50, right: -30),
           Expanded(
             child: Container(
               width: double.infinity,

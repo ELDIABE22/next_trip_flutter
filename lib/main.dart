@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:next_trip/features/auth/presentation/page/login_page.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_search_page.dart';
 import 'package:next_trip/features/hotels/presentation/page/hotel_search_page.dart';
 import 'package:next_trip/features/cars/presentation/pages/car_search_page.dart';
@@ -15,8 +16,9 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(textTheme: GoogleFonts.promptTextTheme()),
-      initialRoute: '/flights',
+      initialRoute: '/login',
       routes: {
+        '/login': (context) => const LoginPage(),
         '/flights': (context) => const FlightSearchPage(),
         '/hotels': (context) => const HotelSearchPage(),
         '/cars': (context) => const CarSearchPage(),

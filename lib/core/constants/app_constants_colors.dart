@@ -17,7 +17,7 @@ class AppConstantsColors {
       radius: 1.8,
       colors: [
         AppConstantsColors.backgroundLight,
-        AppConstantsColors.backgroundDark,
+        Colors.black,
       ], // blanco abajo
       stops: [0.3, 1],
     ),
