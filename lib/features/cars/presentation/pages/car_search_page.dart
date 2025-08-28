@@ -22,6 +22,7 @@ class _CarSearchPageState extends State<CarSearchPage> {
   @override
   Widget build(BuildContext context) {
     return PageLayout(
+      titleHeader: 'CARROS',
       title:
           'Tu aventura sobre ruedas comienza aquí: elige y reserva tu carro ideal',
       selectedIndex: selectedIndex,

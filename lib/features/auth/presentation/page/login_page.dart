@@ -16,6 +16,7 @@ class LoginPage extends StatelessWidget {
       body: Column(
         children: [
           Header(
+            title: 'NEXTRIP',
             containerHeight: 200,
             imageSize: 250,
             top: -50,

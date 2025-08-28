@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:next_trip/routes/app_routes.dart';
 
 class CustomNavBar extends StatelessWidget {
   final int selectedIndex;
@@ -36,8 +37,8 @@ class CustomNavBar extends StatelessWidget {
               buildNavItem(context, Icons.flight, 0),
               buildNavItem(context, Icons.hotel, 1),
               buildNavItem(context, Icons.directions_car, 2),
-              buildNavItem(context, Icons.calendar_today, 3),
-              buildNavItem(context, Icons.person, 4),
+              buildNavItem(context, Icons.event, 3),
+              // buildNavItem(context, Icons.person, 4),
             ],
           ),
         ),
@@ -64,28 +65,28 @@ class CustomNavBar extends StatelessWidget {
   void navigateToPage(BuildContext context, int index) {
     switch (index) {
       case 0: // Flights
-        if (ModalRoute.of(context)?.settings.name != '/flights') {
-          Navigator.pushReplacementNamed(context, '/flights');
+        if (ModalRoute.of(context)?.settings.name != AppRoutes.flights) {
+          Navigator.pushReplacementNamed(context, AppRoutes.flights);
         }
         break;
       case 1: // Hotels
-        if (ModalRoute.of(context)?.settings.name != '/hotels') {
-          Navigator.pushReplacementNamed(context, '/hotels');
+        if (ModalRoute.of(context)?.settings.name != AppRoutes.hotels) {
+          Navigator.pushReplacementNamed(context, AppRoutes.hotels);
         }
         break;
       case 2: // Cars
-        if (ModalRoute.of(context)?.settings.name != '/cars') {
-          Navigator.pushReplacementNamed(context, '/cars');
+        if (ModalRoute.of(context)?.settings.name != AppRoutes.cars) {
+          Navigator.pushReplacementNamed(context, AppRoutes.cars);
         }
         break;
-      case 3: // Reservations
-        if (ModalRoute.of(context)?.settings.name != '/reservations') {
-          Navigator.pushReplacementNamed(context, '/reservations');
+      case 3: // Bookings
+        if (ModalRoute.of(context)?.settings.name != AppRoutes.bookings) {
+          Navigator.pushReplacementNamed(context, AppRoutes.bookings);
         }
         break;
       case 4: // Profile
-        if (ModalRoute.of(context)?.settings.name != '/profile') {
-          Navigator.pushReplacementNamed(context, '/profile');
+        if (ModalRoute.of(context)?.settings.name != AppRoutes.profile) {
+          Navigator.pushReplacementNamed(context, AppRoutes.profile);
         }
         break;
     }

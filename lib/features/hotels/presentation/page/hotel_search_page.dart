@@ -21,6 +21,7 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
   @override
   Widget build(BuildContext context) {
     return PageLayout(
+      titleHeader: 'HOSPEDAJE',
       title:
           'Tu descanso ideal comienza aquí: encuentra y reserva el hospedaje perfecto para tu viaje.',
       selectedIndex: selectedIndex,

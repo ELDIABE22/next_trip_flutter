@@ -5,6 +5,7 @@ import 'package:next_trip/core/widgets/header.dart';
 
 class PageLayout extends StatelessWidget {
   final String title;
+  final String titleHeader;
   final Widget? child;
   final List<Widget>? children;
   final int selectedIndex;
@@ -17,6 +18,7 @@ class PageLayout extends StatelessWidget {
     this.children,
     required this.selectedIndex,
     required this.onItemTapped,
+    this.titleHeader = 'NEXTRIP',
   }) : assert(
          child != null || children != null,
          'Either child or children must be provided',
@@ -28,7 +30,13 @@ class PageLayout extends StatelessWidget {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          Header(containerHeight: 120, imageSize: 150, top: -50, right: -30),
+          Header(
+            title: titleHeader,
+            containerHeight: 120,
+            imageSize: 150,
+            top: -50,
+            right: -60,
+          ),
           Expanded(
             child: Container(
               width: double.infinity,

@@ -7,6 +7,7 @@ class Header extends StatelessWidget {
   final double right;
   final BoxDecoration? radial;
   final Color? textColor;
+  final String title;
 
   const Header({
     super.key,
@@ -16,6 +17,7 @@ class Header extends StatelessWidget {
     required this.right,
     this.radial,
     this.textColor,
+    required this.title,
   });
 
   @override
@@ -36,7 +38,7 @@ class Header extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'NEXTTRIP',
+                title,
                 style: TextStyle(
                   color: textColor ?? Colors.white,
                   fontSize: 28,

@@ -17,6 +17,7 @@ class RegisterPage extends StatelessWidget {
         child: Column(
           children: [
             Header(
+              title: 'NEXTRIP',
               containerHeight: 150,
               imageSize: 220,
               top: -65,

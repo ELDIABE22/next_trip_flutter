@@ -24,6 +24,7 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
   @override
   Widget build(BuildContext context) {
     return PageLayout(
+      titleHeader: 'VUELOS',
       title: 'Tu viaje comienza aquí: elige y reserva tu vuelo',
       selectedIndex: selectedIndex,
       onItemTapped: onItemTapped,
