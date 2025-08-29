@@ -114,10 +114,13 @@ class HotelCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      HotelAttributeTag(title: "4 Huesp.", icon: Icons.person),
-                      HotelAttributeTag(title: "3 Habit.", icon: Icons.home),
-                      HotelAttributeTag(title: "2 Cama", icon: Icons.bed),
-                      HotelAttributeTag(title: "1 Baño", icon: Icons.bathtub),
+                      HotelAttributeTag(title: "4", icon: Icons.person),
+                      SizedBox(width: 10),
+                      HotelAttributeTag(title: "3", icon: Icons.home),
+                      SizedBox(width: 10),
+                      HotelAttributeTag(title: "2", icon: Icons.bed),
+                      SizedBox(width: 10),
+                      HotelAttributeTag(title: "1", icon: Icons.bathtub),
                     ],
                   ),
                 ],

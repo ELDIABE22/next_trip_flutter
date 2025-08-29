@@ -16,25 +16,28 @@ class HotelAttributeTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor ?? Colors.black,
-        borderRadius: BorderRadius.circular(30),
-      ),
-      padding: EdgeInsets.all(7),
-      child: Row(
-        children: [
-          Icon(icon, size: 24, color: textColor ?? Colors.white),
-          SizedBox(width: 4),
-          Text(
-            title,
-            style: TextStyle(
-              color: textColor ?? const Color(0xFFFFFFFF),
-              fontSize: 10,
-              fontWeight: FontWeight.w400,
+    return Expanded(
+      child: Container(
+        decoration: BoxDecoration(
+          color: bgColor ?? Colors.black,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        padding: EdgeInsets.all(10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 24, color: textColor ?? Colors.white),
+            SizedBox(width: 10),
+            Text(
+              title,
+              style: TextStyle(
+                color: textColor ?? const Color(0xFFFFFFFF),
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
