@@ -3,13 +3,13 @@ import 'package:next_trip/core/widgets/custom_button.dart';
 
 class BottomReservePanel extends StatelessWidget {
   final String totalPrice;
-  final String dateRange;
+  final String? dateRange;
   final String buttonText;
 
   const BottomReservePanel({
     super.key,
     required this.totalPrice,
-    required this.dateRange,
+    this.dateRange,
     required this.buttonText,
   });
 
@@ -55,15 +55,17 @@ class BottomReservePanel extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+
                       // SizedBox(height: 5),
-                      Text(
-                        dateRange,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w400,
+                      if (dateRange != null)
+                        Text(
+                          dateRange!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

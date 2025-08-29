@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
+import 'package:next_trip/features/flights/presentation/pages/flight_booking_payment.dart';
 
 class ConfirmPassengerDataButton extends StatelessWidget {
   const ConfirmPassengerDataButton({super.key});
@@ -26,18 +27,19 @@ class ConfirmPassengerDataButton extends StatelessWidget {
               ),
             ),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 15,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               child: CustomButton(
                 text: "Confirmar",
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Funcionalidad en desarrollo"),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FlightBookingPayment(),
                     ),
                   );
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   SnackBar(content: Text("Funcionalidad en desarrollo")),
+                  // );
                 },
               ),
             ),
