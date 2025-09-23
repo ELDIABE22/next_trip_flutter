@@ -3,6 +3,7 @@ import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/features/destinations/presentation/pages/search_country_page.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSearchPage/input_field.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSearchPage/trip_type_buttont.dart';
+import 'package:next_trip/routes/app_routes.dart';
 
 class FlightSearchForm extends StatefulWidget {
   const FlightSearchForm({super.key});
@@ -34,7 +35,6 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Trip Type Selector
           Row(
             children: [
               Expanded(
@@ -58,7 +58,6 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
           ),
           const SizedBox(height: 5),
 
-          // Input Fields
           Row(
             children: [
               Expanded(
@@ -131,8 +130,12 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
           ),
           const SizedBox(height: 10),
 
-          // Search Button
-          CustomButton(text: "Buscar vuelos", onPressed: () {}),
+          CustomButton(
+            text: "Buscar vuelos",
+            onPressed: () {
+              Navigator.pushNamed(context, AppRoutes.login);
+            },
+          ),
         ],
       ),
     );

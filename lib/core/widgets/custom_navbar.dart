@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:next_trip/routes/app_routes.dart';
 
 class CustomNavBar extends StatelessWidget {
@@ -37,8 +38,10 @@ class CustomNavBar extends StatelessWidget {
               buildNavItem(context, Icons.flight, 0),
               buildNavItem(context, Icons.hotel, 1),
               buildNavItem(context, Icons.directions_car, 2),
-              buildNavItem(context, Icons.event, 3),
-              // buildNavItem(context, Icons.person, 4),
+              if (FirebaseAuth.instance.currentUser != null)
+                buildNavItem(context, Icons.event, 3),
+              // if (FirebaseAuth.instance.currentUser != null)
+              //   buildNavItem(context, Icons.person, 4),
             ],
           ),
         ),

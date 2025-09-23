@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:next_trip/features/auth/presentation/page/login_page.dart';
 import 'package:next_trip/features/auth/presentation/page/register_page.dart';
 import 'package:next_trip/features/bookings/presentation/page/bookings_page.dart';
@@ -9,14 +10,48 @@ import 'package:next_trip/features/hotels/presentation/page/hotel_search_page.da
 import 'package:next_trip/routes/app_routes.dart';
 
 class AppPages {
-  static Map<String, WidgetBuilder> routes = {
-    AppRoutes.home: (context) => const HomePage(),
-    AppRoutes.login: (context) => const LoginPage(),
-    AppRoutes.register: (context) => const RegisterPage(),
-    AppRoutes.flights: (context) => const FlightSearchPage(),
-    AppRoutes.hotels: (context) => const HotelSearchPage(),
-    AppRoutes.cars: (context) => const CarSearchPage(),
-    AppRoutes.bookings: (context) => const BookingsPage(),
-    // AppRoutes.profile: (context) => const ProfilePage(),
-  };
+  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    final isLoggedIn = FirebaseAuth.instance.currentUser != null;
+
+    switch (settings.name) {
+      case AppRoutes.home:
+        return MaterialPageRoute(builder: (_) => const HomePage());
+
+      case AppRoutes.login:
+        if (isLoggedIn) {
+          return MaterialPageRoute(builder: (_) => const HomePage());
+        }
+        return MaterialPageRoute(builder: (_) => const LoginPage());
+
+      case AppRoutes.register:
+        if (isLoggedIn) {
+          return MaterialPageRoute(builder: (_) => const HomePage());
+        }
+        return MaterialPageRoute(builder: (_) => const RegisterPage());
+
+      case AppRoutes.flights:
+        return MaterialPageRoute(builder: (_) => const FlightSearchPage());
+
+      case AppRoutes.hotels:
+        return MaterialPageRoute(builder: (_) => const HotelSearchPage());
+
+      case AppRoutes.cars:
+        return MaterialPageRoute(builder: (_) => const CarSearchPage());
+
+      case AppRoutes.bookings:
+        if (!isLoggedIn) {
+          return MaterialPageRoute(builder: (_) => const LoginPage());
+        }
+        return MaterialPageRoute(builder: (_) => const BookingsPage());
+
+      case AppRoutes.profile:
+        if (!isLoggedIn) {
+          return MaterialPageRoute(builder: (_) => const LoginPage());
+        }
+        return MaterialPageRoute(builder: (_) => const HomePage());
+
+      default:
+        return MaterialPageRoute(builder: (_) => const HomePage());
+    }
+  }
 }

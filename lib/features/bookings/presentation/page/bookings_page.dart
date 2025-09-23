@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:next_trip/core/widgets/page_layout.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/booking_tabs.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/flight_booking_card.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/hotel_booking_card.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/car_booking_card.dart';
+import 'package:next_trip/routes/app_routes.dart';
 
 class BookingsPage extends StatefulWidget {
   const BookingsPage({super.key});
@@ -14,7 +16,17 @@ class BookingsPage extends StatefulWidget {
 
 class _BookingsPageState extends State<BookingsPage> {
   int selectedIndex = 3;
-  int selectedTabIndex = 0; // 0: Vuelos, 1: Hoteles, 2: Carros
+  int selectedTabIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (FirebaseAuth.instance.currentUser == null && mounted) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+      }
+    });
+  }
 
   void onItemTapped(int index) {
     setState(() {

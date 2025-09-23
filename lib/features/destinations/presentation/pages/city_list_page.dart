@@ -53,7 +53,7 @@ class CityListPage extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                Input(labelText: "Buscar ciudad", icon: Icon(Icons.search)),
+                Input(labelText: "Buscar ciudad"),
 
                 const SizedBox(height: 20),
 

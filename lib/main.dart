@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:next_trip/routes/app_pages.dart';
 import 'package:next_trip/routes/app_routes.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const MainApp());
 }
 
@@ -15,7 +21,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       theme: ThemeData(textTheme: GoogleFonts.promptTextTheme()),
       initialRoute: AppRoutes.home,
-      routes: AppPages.routes,
+      onGenerateRoute: AppPages.onGenerateRoute,
     );
   }
 }

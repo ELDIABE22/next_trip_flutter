@@ -24,7 +24,7 @@ class CountryListPage extends StatelessWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: Appbar(title: "Seleccionar país",),
+      appBar: Appbar(title: "Seleccionar país"),
       body: Stack(
         children: [
           Container(
@@ -45,7 +45,7 @@ class CountryListPage extends StatelessWidget {
 
                 const SizedBox(height: 10),
 
-                Input(labelText: "Buscar país", icon: Icon(Icons.search)),
+                Input(labelText: "Buscar país"),
 
                 const SizedBox(height: 20),
 

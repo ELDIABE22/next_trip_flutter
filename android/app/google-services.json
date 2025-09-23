@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "618669779574",
+    "project_id": "nexttrip-de3eb",
+    "storage_bucket": "nexttrip-de3eb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618669779574:android:5edbf20539e043d2bd4d57",
+        "android_client_info": {
+          "package_name": "com.devlatino.nextrip"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "618669779574-kkh7qjst3sa65chut69jk1pmd3j1ovr2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.devlatino.nextrip",
+            "certificate_hash": "7d97a9f713becff28c8d6dc8c3a46537454e7d3c"
+          }
+        },
+        {
+          "client_id": "618669779574-ppu7g5laksf4jgtdi6j4nm0spb20n8qk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaficVwcl7L0Dve6qXe1wjmz7ETjCR508"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "618669779574-ppu7g5laksf4jgtdi6j4nm0spb20n8qk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "618669779574-81957ta9qc0ugcp35fgoivonb28g541p.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.devlatino.nextrip"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:618669779574:android:98d6d5616819ac4bbd4d57",
+        "android_client_info": {
+          "package_name": "com.example.next_trip"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "618669779574-ppu7g5laksf4jgtdi6j4nm0spb20n8qk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaficVwcl7L0Dve6qXe1wjmz7ETjCR508"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "618669779574-ppu7g5laksf4jgtdi6j4nm0spb20n8qk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "618669779574-81957ta9qc0ugcp35fgoivonb28g541p.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.devlatino.nextrip"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

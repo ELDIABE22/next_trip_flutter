@@ -36,6 +36,7 @@ class PageLayout extends StatelessWidget {
             imageSize: 150,
             top: -50,
             right: -60,
+            showUserBelowTitle: true,
           ),
           Expanded(
             child: Container(
