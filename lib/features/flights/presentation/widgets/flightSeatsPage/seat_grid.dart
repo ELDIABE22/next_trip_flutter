@@ -1,49 +1,87 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/flights/data/models/seat.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:next_trip/features/flights/data/models/seat_model.dart';
 
 class SeatGrid extends StatefulWidget {
-  const SeatGrid({super.key});
+  final String flightId;
+  final void Function(List<Seat>) onSelectionChanged;
+
+  const SeatGrid({
+    super.key,
+    required this.flightId,
+    required this.onSelectionChanged,
+  });
 
   @override
   State<SeatGrid> createState() => _SeatGridState();
 }
 
 class _SeatGridState extends State<SeatGrid> {
-  List<List<Seat>> seatGrid = [
-    [
-      'A',
-      'B',
-      'C',
-      'D',
-    ].map((col) => Seat(id: '${col}1', status: SeatStatus.available)).toList(),
-    [
-      'A',
-      'B',
-      'C',
-      'D',
-    ].map((col) => Seat(id: '${col}2', status: SeatStatus.available)).toList(),
-    ['A', 'B', 'C', 'D']
-        .map((col) => Seat(id: '${col}3', status: SeatStatus.unavailable))
-        .toList(),
-    [
-      'A',
-      'B',
-      'C',
-      'D',
-    ].map((col) => Seat(id: '${col}4', status: SeatStatus.available)).toList(),
-    [
-      'A',
-      'B',
-      'C',
-      'D',
-    ].map((col) => Seat(id: '${col}5', status: SeatStatus.available)).toList(),
-    ['A', 'B', 'C', 'D']
-        .map((col) => Seat(id: '${col}6', status: SeatStatus.unavailable))
-        .toList(),
-  ];
+  List<Seat> seats = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSeats();
+  }
+
+  Future<void> _loadSeats() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection("flights")
+        .doc(widget.flightId)
+        .collection("seats")
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      setState(() {
+        seats = snapshot.docs.map((doc) => Seat.fromMap(doc.data())).toList();
+      });
+    }
+  }
+
+  void _toggleSeat(Seat seat) {
+    final selectedSeats = seats
+        .where((s) => s.status == SeatStatus.selected)
+        .length;
+
+    if (seat.status == SeatStatus.available) {
+      if (selectedSeats >= 5) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Solo puedes seleccionar hasta 5 asientos por reserva',
+            ),
+            duration: Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        seat.status = SeatStatus.selected;
+      });
+    } else if (seat.status == SeatStatus.selected) {
+      setState(() {
+        seat.status = SeatStatus.available;
+      });
+    }
+
+    widget.onSelectionChanged(
+      seats.where((s) => s.status == SeatStatus.selected).toList(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (seats.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final groupedSeats = <int, List<Seat>>{};
+    for (var seat in seats) {
+      groupedSeats.putIfAbsent(seat.row, () => []).add(seat);
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -68,7 +106,7 @@ class _SeatGridState extends State<SeatGrid> {
                   width: 40,
                   child: Text(
                     letter,
-                    textAlign: TextAlign.start,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -81,10 +119,9 @@ class _SeatGridState extends State<SeatGrid> {
           ),
           const SizedBox(height: 15),
 
-          // Grid de asientos
-          ...seatGrid.asMap().entries.map((entry) {
-            int rowIndex = entry.key;
-            List<Seat> row = entry.value;
+          ...groupedSeats.entries.map((entry) {
+            int row = entry.key;
+            List<Seat> rowSeats = entry.value;
 
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -94,7 +131,7 @@ class _SeatGridState extends State<SeatGrid> {
                   SizedBox(
                     width: 40,
                     child: Text(
-                      '${rowIndex + 1}',
+                      "$row",
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -107,17 +144,11 @@ class _SeatGridState extends State<SeatGrid> {
                   Expanded(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: row.map((seat) {
+                      children: rowSeats.map((seat) {
                         return GestureDetector(
                           onTap: () {
-                            if (seat.status == SeatStatus.available) {
-                              setState(() {
-                                seat.status = SeatStatus.selected;
-                              });
-                            } else if (seat.status == SeatStatus.selected) {
-                              setState(() {
-                                seat.status = SeatStatus.available;
-                              });
+                            if (seat.status != SeatStatus.unavailable) {
+                              _toggleSeat(seat);
                             }
                           },
                           child: Container(
@@ -139,17 +170,6 @@ class _SeatGridState extends State<SeatGrid> {
                                     : Colors.green,
                                 width: 2,
                               ),
-                              boxShadow: seat.status == SeatStatus.selected
-                                  ? [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ]
-                                  : null,
                             ),
                             child: seat.status == SeatStatus.selected
                                 ? const Icon(
@@ -158,7 +178,7 @@ class _SeatGridState extends State<SeatGrid> {
                                     size: 20,
                                   )
                                 : seat.status == SeatStatus.unavailable
-                                ? Icon(
+                                ? const Icon(
                                     Icons.close,
                                     color: Colors.white,
                                     size: 18,

@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
@@ -28,55 +29,41 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDhbgKQ2ZnZUGpQ6lzaKLFRCt0_HT-zglI',
-    appId: '1:618669779574:web:3584aa64b962bbaabd4d57',
-    messagingSenderId: '618669779574',
-    projectId: 'nexttrip-de3eb',
-    authDomain: 'nexttrip-de3eb.firebaseapp.com',
-    storageBucket: 'nexttrip-de3eb.firebasestorage.app',
+  static FirebaseOptions get web => FirebaseOptions(
+    apiKey: dotenv.env['WEB_API_KEY']!,
+    appId: dotenv.env['WEB_APP_ID']!,
+    messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
+    projectId: dotenv.env['FIREBASE_PROJECT_ID']!,
+    authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN']!,
+    storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET']!,
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCaficVwcl7L0Dve6qXe1wjmz7ETjCR508',
-    appId: '1:618669779574:android:98d6d5616819ac4bbd4d57',
-    messagingSenderId: '618669779574',
-    projectId: 'nexttrip-de3eb',
-    storageBucket: 'nexttrip-de3eb.firebasestorage.app',
+  static FirebaseOptions get android => FirebaseOptions(
+    apiKey: dotenv.env['ANDROID_API_KEY']!,
+    appId: dotenv.env['ANDROID_APP_ID']!,
+    messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
+    projectId: dotenv.env['FIREBASE_PROJECT_ID']!,
+    storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET']!,
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyA9H2_MQyG5fuOpM_3z7YDnn56auVJncpg',
-    appId: '1:618669779574:ios:cbd5a8e13126d376bd4d57',
-    messagingSenderId: '618669779574',
-    projectId: 'nexttrip-de3eb',
-    storageBucket: 'nexttrip-de3eb.firebasestorage.app',
-    androidClientId:
-        '618669779574-kkh7qjst3sa65chut69jk1pmd3j1ovr2.apps.googleusercontent.com',
-    iosClientId:
-        '618669779574-fuvl8pe91kucr2h95qu97aismcv6moj3.apps.googleusercontent.com',
-    iosBundleId: 'com.example.nextTrip',
+  static FirebaseOptions get ios => FirebaseOptions(
+    apiKey: dotenv.env['IOS_API_KEY']!,
+    appId: dotenv.env['IOS_APP_ID']!,
+    messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
+    projectId: dotenv.env['FIREBASE_PROJECT_ID']!,
+    storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET']!,
+    iosClientId: dotenv.env['IOS_CLIENT_ID']!,
+    iosBundleId: dotenv.env['IOS_BUNDLE_ID']!,
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyA9H2_MQyG5fuOpM_3z7YDnn56auVJncpg',
-    appId: '1:618669779574:ios:cbd5a8e13126d376bd4d57',
-    messagingSenderId: '618669779574',
-    projectId: 'nexttrip-de3eb',
-    storageBucket: 'nexttrip-de3eb.firebasestorage.app',
-    androidClientId:
-        '618669779574-kkh7qjst3sa65chut69jk1pmd3j1ovr2.apps.googleusercontent.com',
-    iosClientId:
-        '618669779574-fuvl8pe91kucr2h95qu97aismcv6moj3.apps.googleusercontent.com',
-    iosBundleId: 'com.example.nextTrip',
-  );
+  static FirebaseOptions get macos => ios;
 
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDhbgKQ2ZnZUGpQ6lzaKLFRCt0_HT-zglI',
-    appId: '1:618669779574:web:c3b93beca77d35a0bd4d57',
-    messagingSenderId: '618669779574',
-    projectId: 'nexttrip-de3eb',
-    authDomain: 'nexttrip-de3eb.firebaseapp.com',
-    storageBucket: 'nexttrip-de3eb.firebasestorage.app',
+  static FirebaseOptions get windows => FirebaseOptions(
+    apiKey: dotenv.env['API_KEY_WEB']!,
+    appId: dotenv.env['APP_ID_WEB']!,
+    messagingSenderId: dotenv.env['MESSAGING_SENDER_ID']!,
+    projectId: dotenv.env['PROJECT_ID']!,
+    authDomain: dotenv.env['AUTH_DOMAIN']!,
+    storageBucket: dotenv.env['STORAGE_BUCKET']!,
   );
 }

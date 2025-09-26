@@ -1,13 +1,32 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
-import 'package:next_trip/features/flights/presentation/pages/flight_booking_payment.dart';
 
 class ConfirmPassengerDataButton extends StatelessWidget {
-  const ConfirmPassengerDataButton({super.key});
+  final int seatCount;
+  final int addedPassengersCount;
+  final String seatNumber;
+  final List<String> passengerTypes;
+  final bool hasAtLeastOneAdult;
+  final VoidCallback? onPressed;
+
+  const ConfirmPassengerDataButton({
+    super.key,
+    required this.seatCount,
+    required this.addedPassengersCount,
+    required this.seatNumber,
+    required this.passengerTypes,
+    required this.hasAtLeastOneAdult,
+    this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final allPassengersAdded = addedPassengersCount >= seatCount;
+    final buttonText = allPassengersAdded
+        ? "Confirmar"
+        : "Agregar más pasajeros";
+
     return Positioned(
       bottom: 0,
       left: 0,
@@ -28,19 +47,32 @@ class ConfirmPassengerDataButton extends StatelessWidget {
             ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              child: CustomButton(
-                text: "Confirmar",
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FlightBookingPayment(),
+              child: Column(
+                children: [
+                  if (!hasAtLeastOneAdult && addedPassengersCount > 0)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        'Debe haber al menos un adulto',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  );
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   SnackBar(content: Text("Funcionalidad en desarrollo")),
-                  // );
-                },
+                  Opacity(
+                    opacity: (allPassengersAdded && hasAtLeastOneAdult)
+                        ? 1.0
+                        : 0.6,
+                    child: IgnorePointer(
+                      ignoring: !allPassengersAdded || !hasAtLeastOneAdult,
+                      child: CustomButton(
+                        text: buttonText,
+                        onPressed: onPressed,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

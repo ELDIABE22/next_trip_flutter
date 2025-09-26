@@ -1,21 +1,119 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
+import 'package:next_trip/core/utils/helpers.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/core/widgets/bottom_reserve_panel.dart';
+import 'package:next_trip/features/bookings/data/controllers/flight_booking_controller.dart'
+    show FlightBookingController;
+import 'package:next_trip/features/flights/data/models/flight_model.dart';
+import 'package:next_trip/features/flights/data/models/passenger_model.dart';
+import 'package:next_trip/features/flights/data/models/seat_model.dart';
+import 'package:next_trip/features/flights/presentation/pages/payment_success_screen.dart';
 
 class FlightBookingPayment extends StatefulWidget {
-  const FlightBookingPayment({super.key});
+  final int passengerCount;
+  final Flight flight;
+  final String seatNumber;
+  final List<Passenger> passengers;
+  final List<Seat> selectedSeats;
+  final List<String> seatNumbers;
+
+  const FlightBookingPayment({
+    super.key,
+    required this.passengerCount,
+    required this.flight,
+    required this.seatNumber,
+    required this.passengers,
+    required this.selectedSeats,
+    required this.seatNumbers,
+  });
 
   @override
   State<FlightBookingPayment> createState() => _FlightBookingPaymentState();
 }
 
 class _FlightBookingPaymentState extends State<FlightBookingPayment> {
-  bool _showCardForm = false;
+  final FlightBookingController _bookingController = FlightBookingController();
   final TextEditingController _cardNumberController = TextEditingController();
   final TextEditingController _expiryController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
   final TextEditingController _cardholderController = TextEditingController();
+  bool _isLoading = false;
+  bool _showCardForm = false;
+
+  String calculateTotalPrice() {
+    final cleanPrice = widget.flight.totalPriceCop.toString().replaceAll(
+      RegExp(r'[^0-9]'),
+      '',
+    );
+    final totalPrice = int.tryParse(cleanPrice) ?? 0;
+    final total = totalPrice * widget.passengerCount;
+
+    final formatter = NumberFormat("#,###", "es_CO");
+    return '${formatter.format(total)} COP';
+  }
+
+  Future<void> _handlePayment() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await Future.delayed(const Duration(seconds: 2));
+
+      await _bookingController.createBooking(
+        userId: FirebaseAuth.instance.currentUser!.uid,
+        flight: widget.flight,
+        passengers: widget.passengers,
+        selectedSeats: widget.selectedSeats,
+        totalPrice: widget.flight.totalPriceCop * widget.passengerCount,
+      );
+
+      if (mounted) {
+        // Show success screen
+        await Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentSuccessScreen(
+              flight: widget.flight,
+              passengerCount: widget.passengerCount,
+              totalPrice: widget.flight.totalPriceCop * widget.passengerCount,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al procesar el pago: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  PassengerType _parsePassengerType(String type) {
+    switch (type) {
+      case "Niño":
+        return PassengerType.child;
+      case "Bebé":
+        return PassengerType.infant;
+      default:
+        return PassengerType.adult;
+    }
+  }
 
   @override
   void dispose() {
@@ -74,24 +172,41 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            "Total a pagar",
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                          Text(
-                                            "2 Adultos",
+                                            "${widget.passengerCount} ${widget.passengerCount == 1 ? 'Pasajero' : 'Pasajeros'}",
                                             style: TextStyle(
                                               color: Color(0xFF8F8F8F),
                                               fontSize: 12,
                                             ),
                                           ),
+                                          ...['Adulto', 'Niño', 'Bebé'].map((
+                                            type,
+                                          ) {
+                                            final count = widget.passengers
+                                                .where(
+                                                  (p) =>
+                                                      p.type ==
+                                                      _parsePassengerType(type),
+                                                )
+                                                .length;
+                                            if (count == 0) {
+                                              return SizedBox.shrink();
+                                            }
+                                            return Text(
+                                              "$count ${type == 'Adulto'
+                                                  ? 'Adulto(s)'
+                                                  : type == 'Niño'
+                                                  ? 'Niño(s)'
+                                                  : 'Bebé(s)'}",
+                                              style: TextStyle(
+                                                color: Color(0xFF8F8F8F),
+                                                fontSize: 12,
+                                              ),
+                                            );
+                                          }),
                                         ],
                                       ),
                                       Text(
-                                        "\$557,100 COP",
+                                        '\$${calculateTotalPrice()}',
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 20,
@@ -106,7 +221,6 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
 
                             SizedBox(height: 20),
 
-                            // Datos de la tarjeta
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -116,7 +230,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      "De Barranquilla a Bogotá",
+                                      "De ${widget.flight.originCity} a ${widget.flight.destinationCity}",
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 18,
@@ -128,14 +242,14 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                                           CrossAxisAlignment.end,
                                       children: [
                                         Text(
-                                          "DL401",
+                                          widget.flight.flightNumber!,
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 15,
                                           ),
                                         ),
                                         Text(
-                                          "1A",
+                                          widget.seatNumbers.join(', '),
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 15,
@@ -147,7 +261,10 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                                 ),
 
                                 Text(
-                                  "Mie. 01 de oct",
+                                  formatDate(
+                                    widget.flight.departureDateTime
+                                        .toIso8601String(),
+                                  ),
                                   style: TextStyle(
                                     color: Color(0xFF6F6E6E),
                                     fontSize: 15,
@@ -156,7 +273,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                                 ),
 
                                 Text(
-                                  "04:41 A.M BAQ -> 6:14 A.M. BOG",
+                                  "${formatTime(widget.flight.departureDateTime.toIso8601String())} ${widget.flight.originCity} -> ${formatTime(widget.flight.arrivalDateTime.toIso8601String())} ${widget.flight.destinationCity}",
                                   style: TextStyle(
                                     color: Color(0xFF6F6E6E),
                                     fontSize: 15,
@@ -401,8 +518,9 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
 
             // Botón Fixed
             BottomReservePanel(
-              totalPrice: '\$557,100 COP',
-              buttonText: 'Pagar',
+              totalPrice: '\$${calculateTotalPrice()}',
+              buttonText: _isLoading ? 'Procesando...' : 'Pagar',
+              onPressed: _handlePayment,
             ),
           ],
         ),

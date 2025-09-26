@@ -1,29 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/flights/presentation/pages/flight_seats_page.dart';
 
 class FlightCard extends StatelessWidget {
   final String total;
-  final String? passengersText;
   final String? flightDate;
+  final String? departureTime;
+  final String? arrivalTime;
+  final String? originIata;
+  final String? destinationIata;
+  final String? durationLabel;
+  final bool? isDirect;
+  final String? currency;
+  final bool navigateToSeatsOnTap;
+  final VoidCallback? onTap;
 
   const FlightCard({
     super.key,
-    this.passengersText,
     this.flightDate,
     required this.total,
+    this.departureTime,
+    this.arrivalTime,
+    this.originIata,
+    this.destinationIata,
+    this.durationLabel,
+    this.isDirect,
+    this.currency,
+    this.navigateToSeatsOnTap = true,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        if (passengersText == null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const FlightSeatsPage()),
-          );
-        }
-      },
+      onTap: navigateToSeatsOnTap ? onTap : null,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 20),
         child: Column(
@@ -39,20 +47,19 @@ class FlightCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  // Departure
                   Expanded(
                     child: Column(
                       children: [
-                        const Text(
-                          '04:41',
-                          style: TextStyle(
+                        Text(
+                          departureTime ?? '—',
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'BAQ',
+                          originIata ?? '',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -93,16 +100,19 @@ class FlightCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Directo',
-                          style: TextStyle(
+                        Text(
+                          (isDirect ?? true) ? 'Directo' : 'Con escalas',
+                          style: const TextStyle(
                             color: Colors.green,
                             fontSize: 12,
                             fontWeight: FontWeight.w300,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text('1h 33m', style: TextStyle(fontSize: 12)),
+                        Text(
+                          durationLabel ?? '',
+                          style: const TextStyle(fontSize: 12),
+                        ),
                         if (flightDate != null) ...[
                           const SizedBox(height: 4),
                           Text(
@@ -116,25 +126,21 @@ class FlightCard extends StatelessWidget {
                       ],
                     ),
                   ),
-
                   // Arrival
                   Expanded(
                     child: Column(
                       children: [
-                        const Text(
-                          '06:14',
-                          style: TextStyle(
+                        Text(
+                          arrivalTime ?? '—',
+                          style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'BOG',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
+                          destinationIata ?? '',
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                       ],
                     ),
@@ -158,7 +164,7 @@ class FlightCard extends StatelessWidget {
                   Column(
                     children: [
                       Text(
-                        passengersText ?? 'Desde',
+                        'Desde',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w300,
@@ -172,7 +178,7 @@ class FlightCard extends StatelessWidget {
                               Align(
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
-                                  'COP',
+                                  currency ?? 'COP',
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -190,13 +196,11 @@ class FlightCard extends StatelessWidget {
                             ],
                           ),
 
-                          if (passengersText == null) ...[
-                            SizedBox(width: 10),
-                            const Icon(
-                              Icons.keyboard_arrow_down,
-                              color: Colors.black,
-                            ),
-                          ],
+                          SizedBox(width: 10),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.black,
+                          ),
                         ],
                       ),
                     ],

@@ -1,11 +1,18 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
+import 'package:next_trip/features/flights/data/models/seat_model.dart';
+import 'package:next_trip/features/flights/data/models/flight_model.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_passenger_data_page.dart';
 
 class ConfirmButton extends StatelessWidget {
-  const ConfirmButton({super.key});
+  final List<Seat> selectedSeats;
+  final Flight flight;
+
+  const ConfirmButton({
+    super.key,
+    required this.selectedSeats,
+    required this.flight,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,35 +20,42 @@ class ConfirmButton extends StatelessWidget {
       bottom: 0,
       left: 0,
       right: 0,
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.white.withValues(alpha: 0.1),
-                  Colors.white.withValues(alpha: 0.8),
-                ],
-              ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
             ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              child: CustomButton(
-                text: "Confirmar",
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FlightPassengerDataPage(),
-                    ),
-                  );
-                },
-              ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomButton(
+              text: "Continuar con la reserva",
+              onPressed: selectedSeats.isEmpty
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FlightPassengerDataPage(
+                            seatCount: selectedSeats.length,
+                            flight: flight,
+                            selectedSeats: selectedSeats,
+                            seatNumber: selectedSeats.isNotEmpty
+                                ? selectedSeats.first.id
+                                : '',
+                          ),
+                        ),
+                      );
+                    },
             ),
-          ),
+          ],
         ),
       ),
     );

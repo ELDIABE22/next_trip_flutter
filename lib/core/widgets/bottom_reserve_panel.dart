@@ -5,12 +5,16 @@ class BottomReservePanel extends StatelessWidget {
   final String totalPrice;
   final String? dateRange;
   final String buttonText;
+  final VoidCallback? onPressed;
+  final bool isLoading;
 
   const BottomReservePanel({
     super.key,
     required this.totalPrice,
     this.dateRange,
     required this.buttonText,
+    this.onPressed,
+    this.isLoading = false,
   });
 
   @override
@@ -73,7 +77,10 @@ class BottomReservePanel extends StatelessWidget {
               SizedBox(width: 15),
               SizedBox(
                 width: 160,
-                child: CustomButton(text: buttonText, onPressed: () {}),
+                child: CustomButton(
+                  text: buttonText,
+                  onPressed: isLoading ? null : onPressed,
+                ),
               ),
             ],
           ),
