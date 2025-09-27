@@ -18,23 +18,36 @@ class FlightController extends ChangeNotifier {
   String? get error => _error;
 
   Future<void> searchFlights({
-    String? originIata,
-    String? destinationIata,
-    DateTime? date,
+    required String originCity,
+    required String destinationCity,
+    required DateTime departureDate,
   }) async {
     _setLoading(true);
-    _error = null;
+    _clearError();
+
     try {
       final result = await _service.searchFlights(
-        originIata: originIata,
-        destinationIata: destinationIata,
-        date: date,
+        originCity: originCity,
+        destinationCity: destinationCity,
       );
-      _flights
-        ..clear()
-        ..addAll(result);
+
+      final filtered = result.where((f) {
+        final flightDate = DateTime(
+          f.departureDateTime.year,
+          f.departureDateTime.month,
+          f.departureDateTime.day,
+        );
+        final searchDate = DateTime(
+          departureDate.year,
+          departureDate.month,
+          departureDate.day,
+        );
+        return flightDate == searchDate;
+      }).toList();
+
+      _updateFlights(filtered);
     } catch (e) {
-      _error = 'Error al cargar vuelos: ${e.toString()}';
+      _setError('Error al cargar vuelos: ${e.toString()}');
     } finally {
       _setLoading(false);
     }
@@ -42,6 +55,21 @@ class FlightController extends ChangeNotifier {
 
   void _setLoading(bool value) {
     _loading = value;
+    notifyListeners();
+  }
+
+  void _setError(String error) {
+    _error = error;
+    notifyListeners();
+  }
+
+  void _clearError() {
+    _error = null;
+  }
+
+  void _updateFlights(List<Flight> newFlights) {
+    _flights.clear();
+    _flights.addAll(newFlights);
     notifyListeners();
   }
 }

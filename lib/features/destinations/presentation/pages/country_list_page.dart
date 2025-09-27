@@ -1,27 +1,68 @@
+// lib/features/destinations/presentation/pages/country_list_page.dart
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/core/widgets/input.dart';
+import 'package:next_trip/features/destinations/data/services/destination_service.dart';
 import 'package:next_trip/features/destinations/presentation/widgets/country_item_widget.dart';
 
-class CountryListPage extends StatelessWidget {
+class CountryListPage extends StatefulWidget {
   const CountryListPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> countries = [
-      {"name": "Colombia", "image": "assets/images/mundo.webp"},
-      {"name": "México", "image": "assets/images/mundo.webp"},
-      {"name": "Argentina", "image": "assets/images/mundo.webp"},
-      {"name": "Brasil", "image": "assets/images/mundo.webp"},
-      {"name": "Chile", "image": "assets/images/mundo.webp"},
-      {"name": "Perú", "image": "assets/images/mundo.webp"},
-      {"name": "Ecuador", "image": "assets/images/mundo.webp"},
-      {"name": "Venezuela", "image": "assets/images/mundo.webp"},
-      {"name": "Uruguay", "image": "assets/images/mundo.webp"},
-      {"name": "Paraguay", "image": "assets/images/mundo.webp"},
-    ];
+  State<CountryListPage> createState() => _CountryListPageState();
+}
 
+class _CountryListPageState extends State<CountryListPage> {
+  final DestinationService _service = DestinationService();
+  final TextEditingController _searchCtrl = TextEditingController();
+  List<String> _countries = [];
+  List<String> _filtered = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    _searchCtrl.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final q = _searchCtrl.text.toLowerCase();
+    setState(() {
+      _filtered = _countries.where((c) => c.toLowerCase().contains(q)).toList();
+    });
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final list = await _service.fetchCountries();
+      setState(() {
+        _countries = list;
+        _filtered = list;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: Appbar(title: "Seleccionar país"),
@@ -42,27 +83,52 @@ class CountryListPage extends StatelessWidget {
                     color: Colors.black,
                   ),
                 ),
-
                 const SizedBox(height: 10),
 
-                Input(labelText: "Buscar país"),
+                Input(
+                  labelText: "Buscar país",
+                  controller: _searchCtrl,
+                  prefixIcon: Icons.search,
+                ),
 
                 const SizedBox(height: 20),
 
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: countries.length,
-                    itemBuilder: (context, index) {
-                      final country = countries[index];
-                      return CountryItemWidget(
-                        countryName: country["name"]!,
-                        imagePath: country["image"]!,
-                        onTap: () {
-                          Navigator.pop(context, country["name"]);
-                        },
-                      );
-                    },
-                  ),
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Error: $_error',
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: _load,
+                                child: const Text('Reintentar'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _load,
+                          child: ListView.builder(
+                            itemCount: _filtered.length,
+                            itemBuilder: (context, index) {
+                              final countryName = _filtered[index];
+                              return CountryItemWidget(
+                                countryName: countryName,
+                                imagePath: "assets/images/mundo.webp",
+                                onTap: () {
+                                  Navigator.pop(context, countryName);
+                                },
+                              );
+                            },
+                          ),
+                        ),
                 ),
               ],
             ),

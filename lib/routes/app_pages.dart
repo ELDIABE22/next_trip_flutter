@@ -4,6 +4,7 @@ import 'package:next_trip/features/auth/presentation/page/login_page.dart';
 import 'package:next_trip/features/auth/presentation/page/register_page.dart';
 import 'package:next_trip/features/bookings/presentation/page/bookings_page.dart';
 import 'package:next_trip/features/cars/presentation/pages/car_search_page.dart';
+import 'package:next_trip/features/destinations/presentation/pages/search_country_page.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_search_page.dart';
 import 'package:next_trip/features/home/presentation/page/home_page.dart';
 import 'package:next_trip/features/hotels/presentation/page/hotel_search_page.dart';
@@ -19,13 +20,13 @@ class AppPages {
 
       case AppRoutes.login:
         if (isLoggedIn) {
-          return MaterialPageRoute(builder: (_) => const HomePage());
+          return MaterialPageRoute(builder: (_) => const SearchCountryPage());
         }
         return MaterialPageRoute(builder: (_) => const LoginPage());
 
       case AppRoutes.register:
         if (isLoggedIn) {
-          return MaterialPageRoute(builder: (_) => const HomePage());
+          return MaterialPageRoute(builder: (_) => const SearchCountryPage());
         }
         return MaterialPageRoute(builder: (_) => const RegisterPage());
 
@@ -48,10 +49,13 @@ class AppPages {
         if (!isLoggedIn) {
           return MaterialPageRoute(builder: (_) => const LoginPage());
         }
-        return MaterialPageRoute(builder: (_) => const HomePage());
+        return MaterialPageRoute(builder: (_) => const SearchCountryPage());
+
+      case AppRoutes.searchCountry:
+        return MaterialPageRoute(builder: (_) => const SearchCountryPage());
 
       default:
-        return MaterialPageRoute(builder: (_) => const HomePage());
+        return MaterialPageRoute(builder: (_) => const SearchCountryPage());
     }
   }
 }

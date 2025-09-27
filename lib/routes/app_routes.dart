@@ -7,4 +7,5 @@ class AppRoutes {
   static const cars = '/cars';
   static const bookings = '/bookings';
   static const profile = '/profile';
+  static const searchCountry = '/searchCountry';
 }

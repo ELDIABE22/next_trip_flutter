@@ -37,7 +37,7 @@ class WelcomeActions extends StatelessWidget {
                     backgroundColor: Colors.white,
                     textColor: Colors.black,
                     onPressed: () {
-                      Navigator.pushNamed(context, AppRoutes.flights);
+                      Navigator.pushNamed(context, AppRoutes.searchCountry);
                     },
                   ),
                 ] else ...[
@@ -80,7 +80,10 @@ class WelcomeActions extends StatelessWidget {
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {
-                              Navigator.pushNamed(context, AppRoutes.flights);
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.searchCountry,
+                              );
                             },
                         ),
                       ],
