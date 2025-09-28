@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:next_trip/core/utils/helpers.dart';
 import 'package:next_trip/core/widgets/page_layout.dart';
+import 'package:next_trip/features/bookings/data/controllers/flight_booking_controller.dart';
+import 'package:next_trip/features/bookings/data/models/flight_booking_model.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/booking_tabs.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/flight_booking_card.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/hotel_booking_card.dart';
@@ -18,12 +21,17 @@ class _BookingsPageState extends State<BookingsPage> {
   int selectedIndex = 3;
   int selectedTabIndex = 0;
 
+  final FlightBookingController _controller = FlightBookingController();
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (FirebaseAuth.instance.currentUser == null && mounted) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+      } else {
+        final userId = FirebaseAuth.instance.currentUser!.uid;
+        await _controller.fetchUserBookings(userId);
       }
     });
   }
@@ -53,31 +61,105 @@ class _BookingsPageState extends State<BookingsPage> {
     }
   }
 
+  Map<String, List<FlightBooking>> _groupBookingsByDate(
+    List<FlightBooking> bookings,
+  ) {
+    final grouped = <String, List<FlightBooking>>{};
+    final dateMap = <String, DateTime>{};
+
+    for (var booking in bookings) {
+      final dateTime = booking.flight.departureDateTime;
+
+      final dateKey = formatDateFullMonth(dateTime);
+
+      if (!grouped.containsKey(dateKey)) {
+        grouped[dateKey] = [];
+        dateMap[dateKey] = dateTime;
+      }
+      grouped[dateKey]!.add(booking);
+    }
+
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) => dateMap[b]!.compareTo(dateMap[a]!));
+
+    return Map.fromEntries(
+      sortedKeys.map((key) => MapEntry(key, grouped[key]!)),
+    );
+  }
+
   Widget flightBookings() {
+    if (_controller.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_controller.error != null) {
+      return Center(child: Text(_controller.error!));
+    }
+
+    if (_controller.bookings.isEmpty) {
+      return const Center(child: Text('No tienes reservas de vuelos.'));
+    }
+
+    final groupedBookings = _groupBookingsByDate(_controller.bookings);
+
     return Column(
-      children: [
-        FlightBookingCard(
-          date: '01 Octubre, 2025',
-          fromTo: 'BAQ - BOG',
-          status: 'Completado',
-          flightNumber: 'DL401',
-          flightDate: '01 Oct. 2025',
-        ),
-        FlightBookingCard(
-          date: '15 Noviembre, 2025',
-          fromTo: 'BOG - MDE',
-          status: 'En curso',
-          flightNumber: 'AV123',
-          flightDate: '15 Nov. 2025',
-        ),
-        FlightBookingCard(
-          date: '20 Diciembre, 2025',
-          fromTo: 'MDE - BAQ',
-          status: 'Cancelado',
-          flightNumber: 'LA456',
-          flightDate: '20 Dic. 2025',
-        ),
-      ],
+      children: groupedBookings.entries.map((entry) {
+        final date = entry.key;
+        final bookings = entry.value;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color.fromARGB(255, 218, 218, 218),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      color: Colors.black,
+                    ),
+                    child: Text(
+                      date.split(' ')[0],
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${date.split(' ')[1]} ${date.split(' ')[2]}',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            ...bookings.map((booking) {
+              return FlightBookingCard(booking: booking);
+            }),
+
+            const SizedBox(height: 10),
+          ],
+        );
+      }).toList(),
     );
   }
 
@@ -151,7 +233,12 @@ class _BookingsPageState extends State<BookingsPage> {
           onTabChanged: onTabChanged,
         ),
         const SizedBox(height: 20),
-        content(),
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return content();
+          },
+        ),
       ],
     );
   }

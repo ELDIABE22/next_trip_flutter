@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:next_trip/core/utils/helpers.dart';
 
 class Flight {
   final String id;
@@ -47,9 +48,8 @@ class Flight {
 
   /// Hora de salida/llegada en formato HH:mm
   String get departureTimeStr =>
-      departureDateTime.toLocal().toIso8601String().substring(11, 16);
-  String get arrivalTimeStr =>
-      arrivalDateTime.toLocal().toIso8601String().substring(11, 16);
+      formatTimeWithAmPm(departureDateTime.toLocal());
+  String get arrivalTimeStr => formatTimeWithAmPm(arrivalDateTime.toLocal());
 
   /// Duración formateada como "1h 33m"
   String get durationLabel {
@@ -68,6 +68,7 @@ class Flight {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'airline': airline,
       'flightNumber': flightNumber,
       'originCity': originCity,

@@ -261,7 +261,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                                 ),
 
                                 Text(
-                                  formatDate(
+                                  formatDateWithWeekday(
                                     widget.flight.departureDateTime
                                         .toIso8601String(),
                                   ),

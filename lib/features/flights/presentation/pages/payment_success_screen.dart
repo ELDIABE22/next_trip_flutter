@@ -101,7 +101,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                         const Divider(),
                         _buildDetailRow(
                           'Fecha de salida',
-                          formatDate(
+                          formatDateWithWeekday(
                             flight.departureDateTime.toIso8601String(),
                           ),
                         ),
