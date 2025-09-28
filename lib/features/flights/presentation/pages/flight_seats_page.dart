@@ -62,10 +62,7 @@ class _FlightSeatsPageState extends State<FlightSeatsPage> {
               ),
             ),
 
-            ConfirmButton(
-              selectedSeats: selectedSeats,
-              flight: widget.flight,
-            ),
+            ConfirmButton(selectedSeats: selectedSeats, flight: widget.flight),
           ],
         ),
       ),

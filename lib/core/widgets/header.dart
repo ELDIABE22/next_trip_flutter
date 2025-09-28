@@ -54,8 +54,7 @@ class Header extends StatelessWidget {
                       letterSpacing: 7,
                     ),
                   ),
-                  if (showUserBelowTitle &&
-                      FirebaseAuth.instance.currentUser != null)
+                  if (showUserBelowTitle)
                     _buildUserSection(context, textColor: textColor),
                 ],
               ),
@@ -81,44 +80,52 @@ class Header extends StatelessWidget {
   }
 
   Widget _buildUserSection(BuildContext context, {Color? textColor}) {
-    // final user = FirebaseAuth.instance.currentUser;
-    // final displayName =
-    //     (user?.displayName != null && user!.displayName!.isNotEmpty)
-    //     ? user.displayName!
-    //     : (user?.email ?? '');
+    final user = FirebaseAuth.instance.currentUser;
+    final color = textColor ?? Colors.white;
 
-    // final color = textColor ?? Colors.white;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Icon(Icons.person, color: color, size: compact ? 18 : 18),
-        // const SizedBox(width: 6),
-        // Text(
-        //   displayName,
-        //   style: TextStyle(
-        //     color: color,
-        //     fontSize: compact ? 13 : 14,
-        //     fontWeight: FontWeight.w600,
-        //   ),
-        // ),
-        // const SizedBox(width: 10),
-        TextButton.icon(
-          onPressed: () async {
-            AuthController().signOut();
-          },
-          icon: const Icon(Icons.logout, color: Colors.red, size: 18),
-          label: const Text('Salir', style: TextStyle(color: Colors.red)),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            foregroundColor: Colors.red,
-            side: const BorderSide(color: Colors.red),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
+    if (user != null) {
+      return TextButton.icon(
+        onPressed: () => AuthController().signOut(),
+        icon: const Icon(Icons.logout, color: Colors.red, size: 18),
+        label: const Text('Salir', style: TextStyle(color: Colors.red)),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          foregroundColor: Colors.red,
+          side: const BorderSide(color: Colors.red),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-      ],
-    );
+      );
+    } else {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          OutlinedButton(
+            onPressed: () => Navigator.pushNamed(context, '/login'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: color,
+              side: BorderSide(color: color),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Iniciar sesión', style: TextStyle(fontSize: 14)),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: () => Navigator.pushNamed(context, '/register'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Registrarse', style: TextStyle(fontSize: 14)),
+          ),
+        ],
+      );
+    }
   }
 }

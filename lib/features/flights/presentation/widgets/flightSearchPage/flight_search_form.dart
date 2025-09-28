@@ -35,7 +35,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
   bool isOneWay = true;
   int passengers = 2;
   DateTime departureDate = DateTime.now().add(const Duration(days: 1));
-  DateTime? returnDate;
+  DateTime returnDate = DateTime.now().add(const Duration(days: 1));
 
   String? originCity;
   String? originCountry;
@@ -73,9 +73,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
   Future<void> _selectDate(BuildContext context, bool isDeparture) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isDeparture
-          ? departureDate
-          : (returnDate ?? departureDate.add(const Duration(days: 1))),
+      initialDate: isDeparture ? departureDate : returnDate,
       firstDate: isDeparture ? DateTime.now() : departureDate,
       lastDate: DateTime(DateTime.now().year + 1),
     );
@@ -83,7 +81,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
       setState(() {
         if (isDeparture) {
           departureDate = picked;
-          if (returnDate != null && returnDate!.isBefore(departureDate)) {
+          if (returnDate.isBefore(departureDate)) {
             returnDate = departureDate.add(const Duration(days: 1));
           }
         } else {
@@ -248,22 +246,24 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
                 )
               : Row(
                   children: [
-                    InputField(
-                      label: 'Fecha de ida',
-                      value: DateFormat('dd/MM/yyyy').format(departureDate),
-                      icon: Icons.calendar_today,
-                      enabled: true,
-                      onTap: () => _selectDate(context, true),
+                    Expanded(
+                      child: InputField(
+                        label: 'Fecha de ida',
+                        value: DateFormat('dd/MM/yyyy').format(departureDate),
+                        icon: Icons.calendar_today,
+                        enabled: true,
+                        onTap: () => _selectDate(context, true),
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    InputField(
-                      label: 'Fecha de vuelta',
-                      value: returnDate != null
-                          ? DateFormat('dd/MM/yyyy').format(returnDate!)
-                          : 'Seleccionar fecha',
-                      icon: Icons.calendar_today,
-                      enabled: true,
-                      onTap: () => _selectDate(context, false),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: InputField(
+                        label: 'Fecha de vuelta',
+                        value: DateFormat('dd/MM/yyyy').format(returnDate),
+                        icon: Icons.calendar_today,
+                        enabled: true,
+                        onTap: () => _selectDate(context, false),
+                      ),
                     ),
                   ],
                 ),
