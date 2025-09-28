@@ -190,7 +190,7 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
             separatorBuilder: (context, index) => const SizedBox(height: 20),
             itemBuilder: (context, index) {
               final hotel = _hotelController.hotels[index];
-              return HotelCard(hotel: hotel);
+              return HotelCard(hotel: hotel, controller: _hotelController);
             },
           ),
 
