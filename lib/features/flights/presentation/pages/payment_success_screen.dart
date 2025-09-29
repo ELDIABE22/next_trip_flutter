@@ -9,12 +9,16 @@ class PaymentSuccessScreen extends StatelessWidget {
   final Flight flight;
   final int passengerCount;
   final int totalPrice;
+  final bool isRoundTrip;
+  final Flight? returnFlight;
 
   const PaymentSuccessScreen({
     super.key,
     required this.flight,
     required this.passengerCount,
     required this.totalPrice,
+    this.isRoundTrip = false,
+    this.returnFlight,
   });
 
   @override
@@ -26,12 +30,12 @@ class PaymentSuccessScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              // Animated Checkmark
+
               Container(
                 width: 150,
                 height: 150,
                 decoration: BoxDecoration(
-                  color: Color(0xFF38b000).withValues(alpha: 0.1),
+                  color: const Color(0xFF38b000).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
@@ -42,7 +46,10 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 32),
+
+              // Título principal
               const Text(
                 '¡Pago Exitoso!',
                 style: TextStyle(
@@ -51,87 +58,149 @@ class PaymentSuccessScreen extends StatelessWidget {
                   color: Color(0xFF38b000),
                 ),
               ),
+
               const SizedBox(height: 16),
+
+              // Subtítulo con información del tipo de reserva
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Text(
-                  'Tu vuelo ha sido reservado exitosamente.',
+                  isRoundTrip
+                      ? 'Tu reserva de ida y vuelta ha sido confirmada exitosamente.'
+                      : 'Tu vuelo ha sido reservado exitosamente.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              // Badge de tipo de reserva
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isRoundTrip
+                      ? Colors.blue.withValues(alpha: 0.1)
+                      : Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isRoundTrip
+                        ? Colors.blue.withValues(alpha: 0.3)
+                        : Colors.green.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isRoundTrip ? Icons.swap_horiz : Icons.flight,
+                      size: 16,
+                      color: isRoundTrip ? Colors.blue : Colors.green,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      isRoundTrip ? 'Ida y Vuelta' : 'Solo Ida',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: isRoundTrip ? Colors.blue : Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
               const Text(
-                'Detalles del vuelo',
+                'Detalles de la reserva',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
+
               const SizedBox(height: 16),
-              // Flight details card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Card(
-                  elevation: 2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+
+              // Cards de detalles de vuelos
+              if (isRoundTrip) ...[
+                _buildFlightCard(
+                  context,
+                  flight,
+                  'Vuelo de Ida',
+                  Icons.flight_takeoff,
+                ),
+                const SizedBox(height: 16),
+                if (returnFlight != null)
+                  _buildFlightCard(
+                    context,
+                    returnFlight!,
+                    'Vuelo de Regreso',
+                    Icons.flight_land,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
+              ] else ...[
+                _buildFlightCard(
+                  context,
+                  flight,
+                  'Detalles del Vuelo',
+                  Icons.flight,
+                ),
+              ],
+
+              const SizedBox(height: 16),
+
+              // Card de resumen
+              _buildSummaryCard(),
+
+              const SizedBox(height: 32),
+
+              // Información adicional
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                ),
+                child: Column(
+                  children: [
+                    const Row(
                       children: [
-                        _buildDetailRow('Aerolínea', flight.airline ?? 'N/A'),
-                        const Divider(),
-                        _buildDetailRow(
-                          'Número de vuelo',
-                          flight.flightNumber ?? 'N/A',
-                        ),
-                        const Divider(),
-                        _buildDetailRow(
-                          'Origen',
-                          '${flight.originCity} (${flight.originIata})',
-                        ),
-                        const Divider(),
-                        _buildDetailRow(
-                          'Destino',
-                          '${flight.destinationCity} (${flight.destinationIata})',
-                        ),
-                        const Divider(),
-                        _buildDetailRow(
-                          'Fecha de salida',
-                          formatDateWithWeekday(
-                            flight.departureDateTime.toIso8601String(),
+                        Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Información importante',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
                           ),
-                        ),
-                        const Divider(),
-                        _buildDetailRow(
-                          'Hora de salida',
-                          flight.departureTimeStr,
-                        ),
-                        const Divider(),
-                        _buildDetailRow(
-                          'Hora de llegada',
-                          flight.arrivalTimeStr,
-                        ),
-                        const Divider(),
-                        _buildDetailRow('Duración', flight.durationLabel),
-                        const Divider(),
-                        _buildDetailRow('Pasajeros', passengerCount.toString()),
-                        const Divider(),
-                        _buildDetailRow(
-                          'Total',
-                          '\$${NumberFormat('#,##0', 'es_CO').format(totalPrice)} COP',
-                          isBold: true,
-                          textColor: Color(0xFF38b000),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '• Recibirás un email de confirmación en breve\n'
+                      '• Presenta tu documento de identidad en el aeropuerto\n'
+                      '• Llega 2 horas antes para vuelos nacionales\n'
+                      '• Puedes gestionar tu reserva desde "Mis Reservas"',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.black87,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
               const SizedBox(height: 32),
+
               // Action buttons
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -152,7 +221,137 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ],
                 ),
               ),
+
               const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFlightCard(
+    BuildContext context,
+    Flight flight,
+    String title,
+    IconData icon,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: Colors.blue, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Información principal
+              _buildDetailRow('Aerolínea', flight.airline ?? 'N/A'),
+              const Divider(height: 20),
+              _buildDetailRow('Número de vuelo', flight.flightNumber ?? 'N/A'),
+              const Divider(height: 20),
+              _buildDetailRow(
+                'Ruta',
+                '${flight.originCity} (${flight.originIata}) → ${flight.destinationCity} (${flight.destinationIata})',
+              ),
+              const Divider(height: 20),
+              _buildDetailRow(
+                'Fecha',
+                formatDateWithWeekday(
+                  flight.departureDateTime.toIso8601String(),
+                ),
+              ),
+              const Divider(height: 20),
+              _buildDetailRow(
+                'Horario',
+                '${flight.departureTimeStr} → ${flight.arrivalTimeStr}',
+              ),
+              const Divider(height: 20),
+              _buildDetailRow('Duración', flight.durationLabel),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Card(
+        elevation: 2,
+        color: const Color(0xFF38b000).withValues(alpha: 0.1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: const Color(0xFF38b000).withValues(alpha: 0.3),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.receipt_long, color: Color(0xFF38b000), size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Resumen del Pago',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF38b000),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              _buildDetailRow('Pasajeros', passengerCount.toString()),
+              const Divider(height: 20),
+              _buildDetailRow(
+                'Total Pagado',
+                '\$${NumberFormat('#,##0', 'es_CO').format(totalPrice)} COP',
+                isBold: true,
+                textColor: const Color(0xFF38b000),
+              ),
+
+              if (isRoundTrip) ...[
+                const Divider(height: 20),
+                const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.black),
+                    SizedBox(width: 8),
+                    Text(
+                      'Incluye vuelos de ida y regreso',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.black,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -166,26 +365,32 @@ class PaymentSuccessScreen extends StatelessWidget {
     bool isBold = false,
     Color? textColor,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 15)),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: textColor ?? Colors.black87,
-                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                fontSize: 15,
-              ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: textColor ?? Colors.black87,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

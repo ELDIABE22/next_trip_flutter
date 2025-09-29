@@ -7,6 +7,8 @@ import 'package:next_trip/features/flights/data/models/seat_model.dart';
 
 enum BookingStatus { pending, cancelled, completed }
 
+enum TripType { oneWay, outbound, back }
+
 class FlightBooking {
   final String bookingId;
   final String userId;
@@ -18,6 +20,11 @@ class FlightBooking {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  final bool? isRoundTrip;
+  final TripType? tripType;
+  final String? relatedBookingId;
+  final int? totalRoundTripPrice;
+
   FlightBooking({
     required this.bookingId,
     required this.userId,
@@ -26,6 +33,10 @@ class FlightBooking {
     this.status = BookingStatus.pending,
     this.passengers = const [],
     this.seats = const [],
+    this.isRoundTrip,
+    this.tripType,
+    this.relatedBookingId,
+    this.totalRoundTripPrice,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) : createdAt = createdAt ?? DateTime.now(),
@@ -34,6 +45,19 @@ class FlightBooking {
   String get totalPriceLabel {
     final formatter = NumberFormat("#,###", "es_CO");
     return '\$${formatter.format(totalPrice)} COP';
+  }
+
+  String get tripTypeLabel {
+    switch (tripType) {
+      case TripType.oneWay:
+        return 'Solo ida';
+      case TripType.outbound:
+        return 'Vuelo de ida';
+      case TripType.back:
+        return 'Vuelo de regreso';
+      default:
+        return 'Solo ida';
+    }
   }
 
   Map<String, dynamic> toMap() {
@@ -48,6 +72,10 @@ class FlightBooking {
       'seats': seats.map((s) => s.toMap()).toList(),
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'isRoundTrip': isRoundTrip,
+      'tripType': tripType?.name,
+      'relatedBookingId': relatedBookingId,
+      'totalRoundTripPrice': totalRoundTripPrice,
     };
   }
 
@@ -74,6 +102,15 @@ class FlightBooking {
         seats: seats ?? [],
         createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
         updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        isRoundTrip: map['isRoundTrip'] as bool?,
+        tripType: map['tripType'] != null
+            ? TripType.values.firstWhere(
+                (e) => e.name == map['tripType'],
+                orElse: () => TripType.oneWay,
+              )
+            : null,
+        relatedBookingId: map['relatedBookingId'] as String?,
+        totalRoundTripPrice: (map['totalRoundTripPrice'] as num?)?.toInt(),
       );
     } catch (e) {
       debugPrint('Error creating FlightBooking from map: $e');

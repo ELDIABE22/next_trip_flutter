@@ -84,6 +84,7 @@ class _SeatGridState extends State<SeatGrid> {
 
     return Container(
       padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 100),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),

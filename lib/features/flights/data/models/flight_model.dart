@@ -19,7 +19,6 @@ class Flight {
   final Duration duration;
 
   final int totalPriceCop;
-
   final int? availableSeats;
 
   final DateTime? createdAt;
@@ -60,10 +59,100 @@ class Flight {
     return '${m}m';
   }
 
+  /// Duración en horas (para filtros)
+  double get durationInHours => duration.inMinutes / 60.0;
+
   /// Precio formateado
   String get totalPriceLabelCop {
     final formatter = NumberFormat("#,###", "es_CO");
     return formatter.format(totalPriceCop);
+  }
+
+  /// Fecha formateada
+  String get departureDateFormatted {
+    return DateFormat('dd/MM/yyyy').format(departureDateTime);
+  }
+
+  /// Día de la semana
+  String get departureWeekday {
+    final weekdays = [
+      'Lunes',
+      'Martes',
+      'Miércoles',
+      'Jueves',
+      'Viernes',
+      'Sábado',
+      'Domingo',
+    ];
+    return weekdays[departureDateTime.weekday - 1];
+  }
+
+  /// Status del vuelo basado en la hora actual
+  String get flightStatus {
+    final now = DateTime.now();
+    if (now.isBefore(departureDateTime)) {
+      return 'Programado';
+    } else if (now.isAfter(departureDateTime) &&
+        now.isBefore(arrivalDateTime)) {
+      return 'En vuelo';
+    } else {
+      return 'Aterrizado';
+    }
+  }
+
+  /// Tiempo hasta la salida
+  String get timeUntilDeparture {
+    final now = DateTime.now();
+    final difference = departureDateTime.difference(now);
+
+    if (difference.isNegative) return 'Ya partió';
+
+    final days = difference.inDays;
+    final hours = difference.inHours.remainder(24);
+    final minutes = difference.inMinutes.remainder(60);
+
+    if (days > 0) return 'En ${days}d ${hours}h';
+    if (hours > 0) return 'En ${hours}h ${minutes}m';
+    return 'En ${minutes}m';
+  }
+
+  /// Información de escalas
+  String get connectionInfo {
+    return (isDirect ?? true) ? 'Vuelo directo' : 'Con escalas';
+  }
+
+  /// Verifica si es un vuelo de madrugada
+  bool get isEarlyMorningFlight {
+    final hour = departureDateTime.hour;
+    return hour >= 0 && hour < 6;
+  }
+
+  /// Verifica si es un vuelo nocturno
+  bool get isNightFlight {
+    final hour = departureDateTime.hour;
+    return hour >= 22 || hour < 6;
+  }
+
+  /// Categoría de precio (económico, medio, caro)
+  String get priceCategory {
+    if (totalPriceCop < 150000) return 'Económico';
+    if (totalPriceCop < 500000) return 'Medio';
+    return 'Premium';
+  }
+
+  /// Disponibilidad de asientos como texto
+  String get availabilityText {
+    if (availableSeats == null) return 'Disponibilidad no especificada';
+    if (availableSeats! <= 0) return 'Sin disponibilidad';
+    if (availableSeats! <= 5) return 'Pocos asientos disponibles';
+    return 'Disponible';
+  }
+
+  /// Color para mostrar disponibilidad
+  String get availabilityColor {
+    if (availableSeats == null || availableSeats! <= 0) return 'red';
+    if (availableSeats! <= 5) return 'orange';
+    return 'green';
   }
 
   Map<String, dynamic> toMap() {
@@ -139,5 +228,19 @@ class Flight {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Flight && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
+
+  @override
+  String toString() {
+    return 'Flight{id: $id, airline: $airline, route: $routeTitle, departure: $departureTimeStr, price: $totalPriceLabelCop}';
   }
 }

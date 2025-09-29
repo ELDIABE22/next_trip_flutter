@@ -44,9 +44,41 @@ class FlightBookingController with ChangeNotifier {
     }
   }
 
+  Future<void> createRoundTripBooking({
+    required String userId,
+    required Flight outboundFlight,
+    required Flight returnFlight,
+    required List<Passenger> passengers,
+    required List<Seat> outboundSeats,
+    required List<Seat> returnSeats,
+    required double totalPrice,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _service.createRoundTripBooking(
+        userId: userId,
+        outboundFlight: outboundFlight,
+        returnFlight: returnFlight,
+        passengers: passengers,
+        outboundSeats: outboundSeats,
+        returnSeats: returnSeats,
+        totalPrice: totalPrice.toInt(),
+      );
+    } catch (e) {
+      _error = 'Error al crear la reserva de ida y vuelta: $e';
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> fetchUserBookings(String userId) async {
     if (_isLoading) return;
-    
+
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -62,5 +94,36 @@ class FlightBookingController with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Map<String, dynamic> getBookingStats() {
+    final now = DateTime.now();
+    final upcomingBookings = _bookings
+        .where(
+          (b) =>
+              b.flight.departureDateTime.isAfter(now) &&
+              b.status != BookingStatus.cancelled,
+        )
+        .length;
+
+    final completedBookings = _bookings
+        .where((b) => b.status == BookingStatus.completed)
+        .length;
+
+    final roundTripBookings = _bookings
+        .where((b) => b.isRoundTrip == true)
+        .length;
+
+    return {
+      'total': _bookings.length,
+      'upcoming': upcomingBookings,
+      'completed': completedBookings,
+      'roundTrip': roundTripBookings,
+    };
+  }
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
   }
 }

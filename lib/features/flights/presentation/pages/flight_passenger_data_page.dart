@@ -13,6 +13,11 @@ class FlightPassengerDataPage extends StatefulWidget {
   final Flight flight;
   final List<Seat> selectedSeats;
   final String seatNumber;
+  final bool isRoundTrip;
+  final Flight? outboundFlight;
+  final Flight? returnFlight;
+  final List<Seat>? outboundSeats;
+  final List<Seat>? returnSeats;
 
   const FlightPassengerDataPage({
     super.key,
@@ -20,6 +25,11 @@ class FlightPassengerDataPage extends StatefulWidget {
     required this.flight,
     required this.selectedSeats,
     required this.seatNumber,
+    this.isRoundTrip = false,
+    this.outboundFlight,
+    this.returnFlight,
+    this.outboundSeats,
+    this.returnSeats,
   });
 
   @override
@@ -61,6 +71,9 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
 
     setState(() {
       passengers.removeAt(index);
+      if (index < passengersData.length) {
+        passengersData.removeAt(index);
+      }
     });
   }
 
@@ -113,7 +126,11 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Appbar(title: "Datos de los pasajeros"),
+      appBar: Appbar(
+        title: widget.isRoundTrip
+            ? "Datos de pasajeros (Ida y Vuelta)"
+            : "Datos de los pasajeros",
+      ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -135,9 +152,85 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Header informativo para ida y vuelta
+                      if (widget.isRoundTrip) ...[
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.blue.withValues(alpha: 0.1),
+                                Colors.green.withValues(alpha: 0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.blue.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.info_outline, color: Colors.blue),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Reserva ida y vuelta',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.flight_takeoff, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Ida: ${widget.outboundFlight?.routeTitle ?? widget.flight.routeTitle}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.flight_land, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Regreso: ${widget.returnFlight?.routeTitle ?? 'No especificado'}',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.airline_seat_recline_normal,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Total asientos: ${widget.seatCount} (${widget.outboundSeats?.length ?? 0} ida + ${widget.returnSeats?.length ?? 0} regreso)',
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Lista de pasajeros
                       for (var i = 0; i < passengers.length; i++)
                         CollapsiblePassengerBox(
-                          title: passengers[i],
+                          title: '${passengers[i]} ${i + 1}',
                           icon: passengers[i] == "Bebé"
                               ? Icons.child_care
                               : Icons.person,
@@ -148,55 +241,75 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
                             _parsePassengerType(passengers[i]),
                           ),
                         ),
+
                       const Spacer(),
+
+                      // Información de progreso
+                      if (passengers.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.green.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                passengers.length == widget.seatCount
+                                    ? Icons.check_circle
+                                    : Icons.info_outline,
+                                color: passengers.length == widget.seatCount
+                                    ? Colors.green
+                                    : Colors.orange,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  passengers.length == widget.seatCount
+                                      ? 'Todos los pasajeros agregados. Completa los datos para continuar.'
+                                      : 'Faltan ${widget.seatCount - passengers.length} pasajero(s) por agregar',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: passengers.length == widget.seatCount
+                                        ? Colors.green[700]
+                                        : Colors.orange[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // Botones para agregar pasajeros
                       if (passengers.length < widget.seatCount)
                         Wrap(
                           spacing: 10,
                           runSpacing: 10,
                           alignment: WrapAlignment.center,
                           children: [
-                            ElevatedButton(
-                              onPressed: () => _addPassenger("Adulto"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              child: const Text("Agregar Adulto"),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => _addPassenger("Niño"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              child: const Text("Agregar Niño"),
-                            ),
-                            ElevatedButton(
-                              onPressed: () => _addPassenger("Bebé"),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              child: const Text("Agregar Bebé"),
+                            _buildAddPassengerButton("Adulto", Icons.person),
+                            _buildAddPassengerButton("Niño", Icons.child_care),
+                            _buildAddPassengerButton(
+                              "Bebé",
+                              Icons.baby_changing_station,
                             ),
                           ],
                         ),
 
-                      const SizedBox(height: 120),
+                      const SizedBox(height: 200),
                     ],
                   ),
                 ),
               ),
             ),
+
+            // Botón de confirmación
             Positioned(
               bottom: 20,
               left: 0,
@@ -209,37 +322,60 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
                     : '',
                 passengerTypes: passengers,
                 hasAtLeastOneAdult: passengers.contains("Adulto"),
+                isRoundTrip: widget.isRoundTrip,
                 onPressed: () {
                   if (!_validatePassengers()) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text("Debes completar todos los datos"),
+                        backgroundColor: Colors.orange,
                       ),
                     );
                     return;
                   }
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FlightBookingPayment(
-                        passengerCount: widget.seatCount,
-                        flight: widget.flight,
-                        seatNumber: widget.selectedSeats.isNotEmpty
-                            ? widget.selectedSeats.first.id
-                            : '',
-                        seatNumbers: widget.selectedSeats
-                            .map((s) => s.id)
-                            .toList(),
-                        passengers: passengersData,
-                        selectedSeats: widget.selectedSeats,
-                      ),
-                    ),
-                  );
+                  _navigateToPayment();
                 },
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddPassengerButton(String type, IconData icon) {
+    return ElevatedButton.icon(
+      onPressed: () => _addPassenger(type),
+      icon: Icon(icon, size: 16),
+      label: Text("Agregar $type"),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
+  }
+
+  void _navigateToPayment() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FlightBookingPayment(
+          passengerCount: widget.seatCount,
+          flight: widget.flight,
+          seatNumber: widget.selectedSeats.isNotEmpty
+              ? widget.selectedSeats.first.id
+              : '',
+          seatNumbers: widget.selectedSeats.map((s) => s.id).toList(),
+          passengers: passengersData,
+          selectedSeats: widget.selectedSeats,
+          isRoundTrip: widget.isRoundTrip,
+          outboundFlight: widget.outboundFlight,
+          returnFlight: widget.returnFlight,
+          outboundSeats: widget.outboundSeats,
+          returnSeats: widget.returnSeats,
         ),
       ),
     );

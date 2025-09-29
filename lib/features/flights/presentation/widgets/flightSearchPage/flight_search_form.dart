@@ -11,10 +11,13 @@ class FlightSearchForm extends StatefulWidget {
   final String? originCity;
   final String? destinationCountry;
   final String? destinationCity;
+  final DateTime? returnDate;
   final Function({
     required String originCity,
     required String destinationCity,
     required DateTime departureDate,
+    DateTime? returnDate,
+    required bool isOneWay,
   })
   onSearch;
 
@@ -24,6 +27,7 @@ class FlightSearchForm extends StatefulWidget {
     this.originCity,
     this.destinationCountry,
     this.destinationCity,
+    this.returnDate,
     required this.onSearch,
   });
 
@@ -35,7 +39,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
   bool isOneWay = true;
   int passengers = 2;
   DateTime departureDate = DateTime.now().add(const Duration(days: 1));
-  DateTime returnDate = DateTime.now().add(const Duration(days: 1));
+  DateTime returnDate = DateTime.now().add(const Duration(days: 4));
 
   String? originCity;
   String? originCountry;
@@ -44,6 +48,8 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
 
   final TextEditingController originController = TextEditingController();
   final TextEditingController destinationController = TextEditingController();
+
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -56,6 +62,10 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
     originController.text = originCity ?? '';
     destinationController.text = destinationCity ?? '';
 
+    if (widget.returnDate != null) {
+      returnDate = widget.returnDate!;
+    }
+
     _loadPrefs();
   }
 
@@ -67,21 +77,46 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
       originCity = data['originCity'] ?? originCity;
       destinationCountry = data['destinationCountry'] ?? destinationCountry;
       destinationCity = data['destinationCity'] ?? destinationCity;
+
+      originController.text = originCity ?? '';
+      destinationController.text = destinationCity ?? '';
     });
   }
 
   Future<void> _selectDate(BuildContext context, bool isDeparture) async {
+    final DateTime initialDate;
+    final DateTime firstDate;
+    final DateTime lastDate = DateTime.now().add(const Duration(days: 365));
+
+    if (isDeparture) {
+      initialDate = departureDate;
+      firstDate = DateTime.now();
+    } else {
+      initialDate =
+          returnDate.isBefore(departureDate.add(const Duration(days: 1)))
+          ? departureDate.add(const Duration(days: 1))
+          : returnDate;
+      firstDate = departureDate;
+    }
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isDeparture ? departureDate : returnDate,
-      firstDate: isDeparture ? DateTime.now() : departureDate,
-      lastDate: DateTime(DateTime.now().year + 1),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      helpText: isDeparture
+          ? 'Selecciona fecha de ida'
+          : 'Selecciona fecha de regreso',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
     );
+
     if (picked != null) {
       setState(() {
         if (isDeparture) {
           departureDate = picked;
-          if (returnDate.isBefore(departureDate)) {
+
+          if (returnDate.isBefore(departureDate.add(const Duration(days: 1)))) {
             returnDate = departureDate.add(const Duration(days: 1));
           }
         } else {
@@ -91,25 +126,70 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
     }
   }
 
-  void _handleSearch() {
+  Future<void> _handleSearch() async {
     if (originController.text.isEmpty || destinationController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor selecciona origen y destino')),
-      );
+      _showErrorSnackBar('Por favor selecciona origen y destino');
       return;
     }
 
-    if (departureDate.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('La fecha de ida no puede ser pasada')),
-      );
+    if (originController.text.trim() == destinationController.text.trim()) {
+      _showErrorSnackBar('El origen y destino no pueden ser iguales');
       return;
     }
 
-    widget.onSearch(
-      originCity: originController.text,
-      destinationCity: destinationController.text,
-      departureDate: departureDate,
+    if (departureDate.isBefore(
+      DateTime.now().subtract(const Duration(hours: 1)),
+    )) {
+      _showErrorSnackBar('La fecha de ida no puede ser pasada');
+      return;
+    }
+
+    if (!isOneWay && returnDate.isBefore(departureDate)) {
+      _showErrorSnackBar('La fecha de regreso debe ser posterior a la de ida');
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    try {
+      await widget.onSearch(
+        originCity: originController.text.trim(),
+        destinationCity: destinationController.text.trim(),
+        departureDate: departureDate,
+        returnDate: isOneWay ? null : returnDate,
+        isOneWay: isOneWay,
+      );
+    } catch (e) {
+      _showErrorSnackBar('Error al buscar vuelos: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
+      ),
     );
   }
 
@@ -165,70 +245,30 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
           Row(
             children: [
               Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SearchCountryPage(),
-                      ),
-                    );
-
-                    await _loadPrefs();
-                  },
-                  child: InputField(
-                    label: 'Origen',
-                    value: originController.text.isNotEmpty
-                        ? originController.text
-                        : "Seleccionar",
-                    icon: Icons.flight_takeoff,
-                    enabled: true,
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SearchCountryPage(),
-                        ),
-                      );
-                      await _loadPrefs();
-                      setState(() => originController.text = originCity ?? '');
-                    },
-                  ),
+                child: _buildLocationField(
+                  label: 'Origen',
+                  controller: originController,
+                  icon: Icons.flight_takeoff,
+                  onUpdate: () =>
+                      setState(() => originController.text = originCity ?? ''),
                 ),
               ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: GestureDetector(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SearchCountryPage(),
-                      ),
-                    );
 
-                    await _loadPrefs();
-                  },
-                  child: InputField(
-                    label: 'Destino',
-                    value: destinationController.text.isNotEmpty
-                        ? destinationController.text
-                        : "Seleccionar",
-                    icon: Icons.flight_land,
-                    enabled: true,
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SearchCountryPage(),
-                        ),
-                      );
-                      await _loadPrefs();
-                      setState(
-                        () =>
-                            destinationController.text = destinationCity ?? '',
-                      );
-                    },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: IconButton(
+                  onPressed: _swapLocations,
+                  icon: const Icon(Icons.swap_horiz, color: Colors.black),
+                  tooltip: 'Intercambiar origen y destino',
+                ),
+              ),
+              Expanded(
+                child: _buildLocationField(
+                  label: 'Destino',
+                  controller: destinationController,
+                  icon: Icons.flight_land,
+                  onUpdate: () => setState(
+                    () => destinationController.text = destinationCity ?? '',
                   ),
                 ),
               ),
@@ -267,10 +307,103 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
                     ),
                   ],
                 ),
+
+          if (!isOneWay) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Duración del viaje: ${returnDate.difference(departureDate).inDays} días',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 10),
 
-          CustomButton(text: "Buscar vuelos", onPressed: _handleSearch),
+          CustomButton(
+            text: _isSearching ? "Buscando..." : "Buscar vuelos",
+            onPressed: _isSearching ? null : _handleSearch,
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLocationField({
+    required String label,
+    required TextEditingController controller,
+    required IconData icon,
+    required VoidCallback onUpdate,
+  }) {
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SearchCountryPage()),
+        );
+        await _loadPrefs();
+        onUpdate();
+      },
+      child: InputField(
+        label: label,
+        value: controller.text.isNotEmpty ? controller.text : "Seleccionar",
+        icon: icon,
+        enabled: true,
+        onTap: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SearchCountryPage()),
+          );
+          await _loadPrefs();
+          onUpdate();
+        },
+      ),
+    );
+  }
+
+  void _swapLocations() {
+    setState(() {
+      final tempCity = originCity;
+      originCity = destinationCity;
+      destinationCity = tempCity;
+
+      final tempCountry = originCountry;
+      originCountry = destinationCountry;
+      destinationCountry = tempCountry;
+
+      originController.text = originCity ?? '';
+      destinationController.text = destinationCity ?? '';
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.swap_horiz, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Origen y destino intercambiados'),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+        duration: Duration(seconds: 1),
       ),
     );
   }
@@ -278,11 +411,23 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
   void showPassengerSelector() {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             const Text(
               'Seleccionar pasajeros',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -291,29 +436,59 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Pasajeros'),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pasajeros',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      'Adultos y niños',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
                 Row(
                   children: [
                     IconButton(
-                      onPressed: () {
-                        if (passengers > 1) {
-                          setState(() => passengers--);
-                        }
-                      },
-                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: passengers > 1
+                          ? () => setState(() => passengers--)
+                          : null,
+                      icon: Icon(
+                        Icons.remove_circle_outline,
+                        color: passengers > 1 ? Colors.blue : Colors.grey,
+                      ),
                     ),
-                    Text(
-                      '$passengers',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.blue),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$passengers',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
                       ),
                     ),
                     IconButton(
-                      onPressed: () {
-                        setState(() => passengers++);
-                      },
-                      icon: const Icon(Icons.add_circle_outline),
+                      onPressed: passengers < 9
+                          ? () => setState(() => passengers++)
+                          : null,
+                      icon: Icon(
+                        Icons.add_circle_outline,
+                        color: passengers < 9 ? Colors.blue : Colors.grey,
+                      ),
                     ),
                   ],
                 ),
@@ -325,10 +500,17 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
+                  backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
                 ),
-                child: const Text('Confirmar'),
+                child: const Text(
+                  'Confirmar',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
