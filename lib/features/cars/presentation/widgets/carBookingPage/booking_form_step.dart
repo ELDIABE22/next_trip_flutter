@@ -447,11 +447,10 @@ class _BookingFormStepState extends State<BookingFormStep> {
       context: context,
       initialDate:
           widget.controller.selectedReturnDate ??
-          DateTime.now().add(const Duration(days: 4)),
+          DateTime.now().add(const Duration(days: 15)),
       firstDate: widget.controller.selectedPickupDate ?? DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
-
     if (picked != null) {
       widget.controller.setReturnDate(picked);
     }

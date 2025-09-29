@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:next_trip/core/utils/helpers.dart';
+import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/core/widgets/page_layout.dart';
+import 'package:next_trip/features/bookings/data/controllers/car_booking_controller.dart';
 import 'package:next_trip/features/bookings/data/controllers/flight_booking_controller.dart';
 import 'package:next_trip/features/bookings/data/controllers/hotel_booking_controller.dart';
+import 'package:next_trip/features/bookings/data/models/car_booking_model.dart';
 import 'package:next_trip/features/bookings/data/models/flight_booking_model.dart';
 import 'package:next_trip/features/bookings/data/models/hotel_booking_model.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/booking_tabs.dart';
@@ -25,6 +28,7 @@ class _BookingsPageState extends State<BookingsPage> {
 
   final FlightBookingController _flightController = FlightBookingController();
   final HotelBookingController _hotelController = HotelBookingController();
+  final CarBookingController _carBookingController = CarBookingController();
 
   @override
   void initState() {
@@ -36,6 +40,7 @@ class _BookingsPageState extends State<BookingsPage> {
         final userId = FirebaseAuth.instance.currentUser!.uid;
         await _flightController.fetchUserBookings(userId);
         await _loadHotelBookings(userId);
+        await _loadCarBookings(userId);
       }
     });
   }
@@ -49,9 +54,19 @@ class _BookingsPageState extends State<BookingsPage> {
     }
   }
 
+  Future<void> _loadCarBookings(String userId) async {
+    try {
+      await _carBookingController.loadUserBookings(userId);
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('Error loading car bookings: $e');
+    }
+  }
+
   @override
   void dispose() {
     _hotelController.dispose();
+    _carBookingController.dispose();
     super.dispose();
   }
 
@@ -88,6 +103,31 @@ class _BookingsPageState extends State<BookingsPage> {
 
     for (var booking in bookings) {
       final dateTime = booking.checkInDate;
+      final dateKey = formatDateFullMonth(dateTime);
+
+      if (!grouped.containsKey(dateKey)) {
+        grouped[dateKey] = [];
+        dateMap[dateKey] = dateTime;
+      }
+      grouped[dateKey]!.add(booking);
+    }
+
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) => dateMap[b]!.compareTo(dateMap[a]!));
+
+    return Map.fromEntries(
+      sortedKeys.map((key) => MapEntry(key, grouped[key]!)),
+    );
+  }
+
+  Map<String, List<CarBooking>> _groupCarBookingsByDate(
+    List<CarBooking> bookings,
+  ) {
+    final grouped = <String, List<CarBooking>>{};
+    final dateMap = <String, DateTime>{};
+
+    for (var booking in bookings) {
+      final dateTime = booking.pickupDate;
       final dateKey = formatDateFullMonth(dateTime);
 
       if (!grouped.containsKey(dateKey)) {
@@ -239,15 +279,16 @@ class _BookingsPageState extends State<BookingsPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            CustomButton(
               onPressed: () async {
                 final userId = FirebaseAuth.instance.currentUser?.uid;
                 if (userId != null) {
                   await _loadHotelBookings(userId);
                 }
               },
-              child: const Text('Reintentar'),
+              text: 'Reintentar',
             ),
+            const SizedBox(height: 16),
           ],
         ),
       );
@@ -259,31 +300,28 @@ class _BookingsPageState extends State<BookingsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.hotel_outlined, size: 64, color: Colors.grey),
+            const Icon(Icons.hotel_outlined, size: 64, color: Colors.black),
             const SizedBox(height: 16),
             const Text(
               'No tienes reservas de hoteles',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                color: Colors.black,
               ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Cuando hagas una reserva, aparecerá aquí.',
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.black),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
+            CustomButton(
               onPressed: () {
-                // Navegar a buscar hoteles
-                Navigator.of(
-                  context,
-                ).pop(); // O navegar a la sección de hoteles
+                Navigator.of(context).pop();
               },
-              child: const Text('Explorar Hoteles'),
+              text: 'Explorar Hoteles',
             ),
           ],
         ),
@@ -299,6 +337,165 @@ class _BookingsPageState extends State<BookingsPage> {
         final userId = FirebaseAuth.instance.currentUser?.uid;
         if (userId != null) {
           await _loadHotelBookings(userId);
+        }
+      },
+      child: Column(
+        children: groupedBookings.entries.map((entry) {
+          final date = entry.key;
+          final bookings = entry.value;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 218, 218, 218),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Colors.black,
+                      ),
+                      child: Text(
+                        date.split(' ')[0],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '${date.split(' ')[1]} ${date.split(' ')[2]}',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              ...bookings.map((booking) {
+                return HotelBookingCard(booking: booking);
+              }),
+
+              const SizedBox(height: 10),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // NUEVO: Widget para reservas de carros con datos reales
+  Widget carBookings() {
+    // Estado de carga
+    if (_carBookingController.isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Cargando reservas de carros...'),
+          ],
+        ),
+      );
+    }
+
+    // Estado de error
+    if (_carBookingController.hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Error al cargar las reservas',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _carBookingController.errorMessage ?? 'Error desconocido',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            CustomButton(
+              onPressed: () async {
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                if (userId != null) {
+                  await _loadCarBookings(userId);
+                }
+              },
+              text: 'Reintentar',
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Estado vacío
+    if (_carBookingController.userBookings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.directions_car_outlined,
+              size: 64,
+              color: Colors.black,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'No tienes reservas de carros',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Cuando hagas una reserva, aparecerá aquí.',
+              style: TextStyle(color: Colors.black),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            CustomButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              text: 'Explorar Carros',
+            ),
+          ],
+        ),
+      );
+    }
+
+    final groupedBookings = _groupCarBookingsByDate(
+      _carBookingController.userBookings,
+    );
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId != null) {
+          await _loadCarBookings(userId);
         }
       },
       child: Column(
@@ -353,9 +550,7 @@ class _BookingsPageState extends State<BookingsPage> {
               const SizedBox(height: 10),
 
               ...bookings.map((booking) {
-                return HotelBookingCard(
-                  booking: booking, // Pasar el objeto booking completo
-                );
+                return CarBookingCard(booking: booking);
               }),
 
               const SizedBox(height: 10),
@@ -363,34 +558,6 @@ class _BookingsPageState extends State<BookingsPage> {
           );
         }).toList(),
       ),
-    );
-  }
-
-  Widget carBookings() {
-    return Column(
-      children: [
-        CarBookingCard(
-          date: '01 Octubre, 2025',
-          carModel: 'Hyundai Tucson',
-          status: 'En curso',
-          duration: '10 DÍAS',
-          dateRange: '01 Oct. 2025 - 10 Oct. 2025',
-        ),
-        CarBookingCard(
-          date: '20 Noviembre, 2025',
-          carModel: 'Toyota Corolla',
-          status: 'Completado',
-          duration: '7 DÍAS',
-          dateRange: '20 Nov. 2025 - 27 Nov. 2025',
-        ),
-        CarBookingCard(
-          date: '05 Diciembre, 2025',
-          carModel: 'Nissan Sentra',
-          status: 'Cancelado',
-          duration: '4 DÍAS',
-          dateRange: '05 Dic. 2025 - 09 Dic. 2025',
-        ),
-      ],
     );
   }
 

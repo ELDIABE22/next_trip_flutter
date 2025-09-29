@@ -6,6 +6,7 @@ import 'package:next_trip/features/cars/data/models/car_model.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carBookingPage/booking_form_step.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carBookingPage/booking_summary_card.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carBookingPage/car_info_card.dart';
+import 'package:next_trip/routes/app_routes.dart';
 
 class CarBookingPage extends StatefulWidget {
   final Car car;
@@ -383,18 +384,10 @@ class _CarBookingPageState extends State<CarBookingPage> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop(); // Cerrar diálogo
-              Navigator.of(context).pop(); // Volver a detalles
-              Navigator.of(context).pop(); // Volver a lista
+              Navigator.of(context).popUntil((route) => route.isFirst);
+              Navigator.pushReplacementNamed(context, AppRoutes.bookings);
             },
             child: const Text('Ver mis reservas'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Cerrar diálogo
-              Navigator.of(context).pop(); // Volver a detalles
-            },
-            child: const Text('Continuar'),
           ),
         ],
       ),
