@@ -7,7 +7,6 @@ import '../services/hotel_booking_service.dart';
 class HotelBookingController {
   final HotelBookingService _bookingService = HotelBookingService();
 
-  // Estados privados
   List<HotelBooking> _bookings = [];
   List<HotelBooking> _userBookings = [];
   HotelBooking? _selectedBooking;
@@ -15,7 +14,6 @@ class HotelBookingController {
   String? _errorMessage;
   StreamSubscription<List<HotelBooking>>? _bookingsSubscription;
 
-  // Estados específicos para el proceso de reserva
   bool _isCreatingBooking = false;
   DateTime? _selectedCheckInDate;
   DateTime? _selectedCheckOutDate;
@@ -23,7 +21,6 @@ class HotelBookingController {
   String _guestEmail = '';
   String _guestPhone = '';
 
-  // Getters públicos
   List<HotelBooking> get bookings => List.unmodifiable(_bookings);
   List<HotelBooking> get userBookings => List.unmodifiable(_userBookings);
   HotelBooking? get selectedBooking => _selectedBooking;
@@ -34,14 +31,12 @@ class HotelBookingController {
   bool get hasBookings => _bookings.isNotEmpty;
   bool get hasUserBookings => _userBookings.isNotEmpty;
 
-  // Getters para fechas de reserva
   DateTime? get selectedCheckInDate => _selectedCheckInDate;
   DateTime? get selectedCheckOutDate => _selectedCheckOutDate;
   String get guestName => _guestName;
   String get guestEmail => _guestEmail;
   String get guestPhone => _guestPhone;
 
-  // Getters útiles
   bool get hasValidDateRange =>
       _selectedCheckInDate != null &&
       _selectedCheckOutDate != null &&
@@ -57,24 +52,17 @@ class HotelBookingController {
       _guestEmail.isNotEmpty &&
       _guestPhone.isNotEmpty;
 
-  // Callback para notificar cambios al UI
   void Function()? onStateChanged;
 
-  // Constructor
   HotelBookingController({this.onStateChanged});
 
-  // Dispose
   void dispose() {
     _bookingsSubscription?.cancel();
   }
 
-  // === MÉTODOS PARA GESTIÓN DE FECHAS Y DATOS DE HUÉSPED ===
-
-  // Establecer fecha de check-in
   void setCheckInDate(DateTime date) {
     _selectedCheckInDate = date;
 
-    // Si la fecha de check-out es anterior o igual, limpiarla
     if (_selectedCheckOutDate != null &&
         !_selectedCheckOutDate!.isAfter(date)) {
       _selectedCheckOutDate = null;
@@ -114,8 +102,6 @@ class HotelBookingController {
     _notifyStateChanged();
   }
 
-  // === MÉTODOS PARA CREAR RESERVAS ===
-
   // Crear una nueva reserva
   Future<bool> createBooking({
     required Hotel hotel,
@@ -141,7 +127,6 @@ class HotelBookingController {
         specialRequests: specialRequests,
       );
 
-      // Agregar la nueva reserva a las listas locales
       _bookings.insert(0, booking);
       if (userId == booking.userId) {
         _userBookings.insert(0, booking);
@@ -150,7 +135,6 @@ class HotelBookingController {
       _selectedBooking = booking;
       _clearError();
 
-      // Limpiar formulario después de crear exitosamente
       clearDates();
       clearGuestInfo();
 
@@ -162,8 +146,6 @@ class HotelBookingController {
       _setCreatingBookingState(false);
     }
   }
-
-  // === MÉTODOS PARA CARGAR RESERVAS ===
 
   // Cargar reservas por usuario
   Future<void> loadUserBookings(String userId) async {
@@ -300,10 +282,6 @@ class HotelBookingController {
   List<HotelBooking> getBookingsByStatus(BookingStatus status) {
     return _userBookings.where((booking) => booking.status == status).toList();
   }
-
-  // Obtener reservas pendientes
-  List<HotelBooking> get pendingBookings =>
-      getBookingsByStatus(BookingStatus.pending);
 
   // Obtener reservas confirmadas
   List<HotelBooking> get confirmedBookings =>

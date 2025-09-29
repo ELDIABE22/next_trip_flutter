@@ -40,7 +40,7 @@ class HotelBookingService {
         'checkOutDate': Timestamp.fromDate(checkOutDate),
         'totalPrice': totalPrice,
         'numberOfNights': numberOfNights,
-        'status': BookingStatus.pending.name,
+        'status': BookingStatus.confirmed.name,
         'bookingDate': Timestamp.fromDate(now),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -180,7 +180,6 @@ class HotelBookingService {
       final bookings = await getBookingsByUser(userId);
 
       int totalBookings = bookings.length;
-      int pendingBookings = bookings.where((b) => b.isPending).length;
       int confirmedBookings = bookings.where((b) => b.isConfirmed).length;
       int cancelledBookings = bookings.where((b) => b.isCancelled).length;
       int completedBookings = bookings.where((b) => b.isCompleted).length;
@@ -192,7 +191,6 @@ class HotelBookingService {
 
       return {
         'totalBookings': totalBookings,
-        'pendingBookings': pendingBookings,
         'confirmedBookings': confirmedBookings,
         'cancelledBookings': cancelledBookings,
         'completedBookings': completedBookings,

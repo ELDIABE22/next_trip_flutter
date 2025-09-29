@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:next_trip/features/hotels/data/models/hotel_model.dart';
 
-enum BookingStatus { pending, confirmed, cancelled, completed }
+enum BookingStatus { confirmed, cancelled, completed }
 
 class HotelBooking {
   final String id;
@@ -55,8 +55,6 @@ class HotelBooking {
   static BookingStatus _parseStatus(dynamic statusValue) {
     if (statusValue is String) {
       switch (statusValue.toLowerCase()) {
-        case 'pending':
-          return BookingStatus.pending;
         case 'confirmed':
           return BookingStatus.confirmed;
         case 'cancelled':
@@ -64,10 +62,10 @@ class HotelBooking {
         case 'completed':
           return BookingStatus.completed;
         default:
-          return BookingStatus.pending;
+          return BookingStatus.completed;
       }
     }
-    return BookingStatus.pending;
+    return BookingStatus.completed;
   }
 
   factory HotelBooking.fromMap(Map<String, dynamic> map, String documentId) {
@@ -191,8 +189,6 @@ class HotelBooking {
 
   String get statusDisplayText {
     switch (status) {
-      case BookingStatus.pending:
-        return 'Pendiente';
       case BookingStatus.confirmed:
         return 'Confirmada';
       case BookingStatus.cancelled:
@@ -213,13 +209,11 @@ class HotelBooking {
 
   Duration get duration => checkOutDate.difference(checkInDate);
 
-  bool get isPending => status == BookingStatus.pending;
   bool get isConfirmed => status == BookingStatus.confirmed;
   bool get isCancelled => status == BookingStatus.cancelled;
   bool get isCompleted => status == BookingStatus.completed;
 
-  bool get canBeCancelled =>
-      status == BookingStatus.pending || status == BookingStatus.confirmed;
+  bool get canBeCancelled => status == BookingStatus.confirmed;
 
   String get hotelName => hotelDetails.name;
   String get hotelAddress => hotelDetails.address;

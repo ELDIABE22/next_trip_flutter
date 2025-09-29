@@ -1,106 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:next_trip/features/bookings/data/models/hotel_booking_model.dart';
 import 'package:next_trip/features/bookings/presentation/page/booking_details_hotel.dart';
 
 class HotelBookingCard extends StatelessWidget {
-  final String date;
-  final String hotelName;
-  final String status;
-  final String duration;
-  final String dateRange;
+  final HotelBooking booking;
 
-  const HotelBookingCard({
-    super.key,
-    required this.date,
-    required this.hotelName,
-    required this.status,
-    required this.duration,
-    required this.dateRange,
-  });
+  const HotelBookingCard({super.key, required this.booking});
 
-  Map<String, String> _parseDate(String date) {
-    final parts = date.split(' ');
-    if (parts.length >= 3) {
-      final day = parts[0];
-      final month = parts[1].replaceAll(',', '');
-      final year = parts[2];
-      return {'day': day, 'monthYear': '$month, $year'};
+  Color _getStatusColor() {
+    switch (booking.status) {
+      case BookingStatus.completed:
+        return const Color(0xFF4CAF50);
+      case BookingStatus.cancelled:
+        return const Color(0xFFF44336);
+      case BookingStatus.confirmed:
+        return const Color(0xFF2196F3);
     }
-    return {'day': '01', 'monthYear': 'Enero, 2025'};
   }
 
   @override
   Widget build(BuildContext context) {
-    Color statusColor;
-    switch (status.toLowerCase()) {
-      case 'completado':
-        statusColor = const Color(0xFF4CAF50);
-        break;
-      case 'cancelado':
-        statusColor = const Color(0xFFF44336);
-        break;
-      case 'en curso':
-        statusColor = const Color(0xFFFF9800);
-        break;
-      default:
-        statusColor = Colors.grey;
-    }
-
-    final dateInfo = _parseDate(date);
+    final statusColor = _getStatusColor();
 
     return Column(
       children: [
-        // Date
-        Container(
-          padding: EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFDADADA),
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: Colors.black,
-                ),
-                child: SizedBox(
-                  child: Text(
-                    dateInfo['day']!,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(width: 10),
-
-              Text(
-                dateInfo['monthYear']!,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 2,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        SizedBox(height: 10),
-
-        // Card
         GestureDetector(
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const BookingDetailsHotel(),
+                builder: (context) => BookingDetailsHotel(booking: booking),
               ),
             );
           },
@@ -121,7 +50,7 @@ class HotelBookingCard extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     border: Border(
                       bottom: BorderSide(width: 1, color: Color(0XFF8F8F8F)),
                     ),
@@ -142,13 +71,28 @@ class HotelBookingCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 17),
                       Expanded(
-                        child: Text(
-                          hotelName,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              booking.hotelName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              booking.hotelCity,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       Container(
@@ -161,7 +105,7 @@ class HotelBookingCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          status,
+                          booking.statusDisplayText,
                           style: TextStyle(
                             color: statusColor,
                             fontSize: 12,
@@ -172,22 +116,53 @@ class HotelBookingCard extends StatelessWidget {
                     ],
                   ),
                 ),
+
                 Container(
                   padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
-                      Text(
-                        duration,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${booking.numberOfNights} NOCHES',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            booking.formattedTotalPrice,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.green,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                       const Spacer(),
-                      Text(
-                        dateRange,
-                        style: TextStyle(fontSize: 15, color: Colors.white),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            booking.dateRange,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'ID: #${booking.id.substring(0, 8)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -197,7 +172,7 @@ class HotelBookingCard extends StatelessWidget {
           ),
         ),
 
-        SizedBox(height: 10),
+        const SizedBox(height: 10),
       ],
     );
   }

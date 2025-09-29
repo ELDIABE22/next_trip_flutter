@@ -3,7 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:next_trip/core/utils/helpers.dart';
 import 'package:next_trip/core/widgets/page_layout.dart';
 import 'package:next_trip/features/bookings/data/controllers/flight_booking_controller.dart';
+import 'package:next_trip/features/bookings/data/controllers/hotel_booking_controller.dart';
 import 'package:next_trip/features/bookings/data/models/flight_booking_model.dart';
+import 'package:next_trip/features/bookings/data/models/hotel_booking_model.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/booking_tabs.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/flight_booking_card.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/hotel_booking_card.dart';
@@ -21,7 +23,8 @@ class _BookingsPageState extends State<BookingsPage> {
   int selectedIndex = 3;
   int selectedTabIndex = 0;
 
-  final FlightBookingController _controller = FlightBookingController();
+  final FlightBookingController _flightController = FlightBookingController();
+  final HotelBookingController _hotelController = HotelBookingController();
 
   @override
   void initState() {
@@ -31,9 +34,25 @@ class _BookingsPageState extends State<BookingsPage> {
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       } else {
         final userId = FirebaseAuth.instance.currentUser!.uid;
-        await _controller.fetchUserBookings(userId);
+        await _flightController.fetchUserBookings(userId);
+        await _loadHotelBookings(userId);
       }
     });
+  }
+
+  Future<void> _loadHotelBookings(String userId) async {
+    try {
+      await _hotelController.loadUserBookings(userId);
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('Error loading hotel bookings: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _hotelController.dispose();
+    super.dispose();
   }
 
   void onItemTapped(int index) {
@@ -61,6 +80,31 @@ class _BookingsPageState extends State<BookingsPage> {
     }
   }
 
+  Map<String, List<HotelBooking>> _groupHotelBookingsByDate(
+    List<HotelBooking> bookings,
+  ) {
+    final grouped = <String, List<HotelBooking>>{};
+    final dateMap = <String, DateTime>{};
+
+    for (var booking in bookings) {
+      final dateTime = booking.checkInDate;
+      final dateKey = formatDateFullMonth(dateTime);
+
+      if (!grouped.containsKey(dateKey)) {
+        grouped[dateKey] = [];
+        dateMap[dateKey] = dateTime;
+      }
+      grouped[dateKey]!.add(booking);
+    }
+
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) => dateMap[b]!.compareTo(dateMap[a]!));
+
+    return Map.fromEntries(
+      sortedKeys.map((key) => MapEntry(key, grouped[key]!)),
+    );
+  }
+
   Map<String, List<FlightBooking>> _groupBookingsByDate(
     List<FlightBooking> bookings,
   ) {
@@ -69,7 +113,6 @@ class _BookingsPageState extends State<BookingsPage> {
 
     for (var booking in bookings) {
       final dateTime = booking.flight.departureDateTime;
-
       final dateKey = formatDateFullMonth(dateTime);
 
       if (!grouped.containsKey(dateKey)) {
@@ -88,19 +131,19 @@ class _BookingsPageState extends State<BookingsPage> {
   }
 
   Widget flightBookings() {
-    if (_controller.isLoading) {
+    if (_flightController.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_controller.error != null) {
-      return Center(child: Text(_controller.error!));
+    if (_flightController.error != null) {
+      return Center(child: Text(_flightController.error!));
     }
 
-    if (_controller.bookings.isEmpty) {
+    if (_flightController.bookings.isEmpty) {
       return const Center(child: Text('No tienes reservas de vuelos.'));
     }
 
-    final groupedBookings = _groupBookingsByDate(_controller.bookings);
+    final groupedBookings = _groupBookingsByDate(_flightController.bookings);
 
     return Column(
       children: groupedBookings.entries.map((entry) {
@@ -164,30 +207,162 @@ class _BookingsPageState extends State<BookingsPage> {
   }
 
   Widget hotelBookings() {
-    return Column(
-      children: [
-        HotelBookingCard(
-          date: '10 Noviembre, 2025',
-          hotelName: 'Hotel Dann Carlton',
-          status: 'Cancelado',
-          duration: '6 DÍAS',
-          dateRange: '10 Nov. 2025 - 16 Nov. 2025',
+    // Estado de carga
+    if (_hotelController.isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Cargando reservas de hoteles...'),
+          ],
         ),
-        HotelBookingCard(
-          date: '25 Diciembre, 2025',
-          hotelName: 'Hotel Intercontinental',
-          status: 'Completado',
-          duration: '3 DÍAS',
-          dateRange: '25 Dic. 2025 - 28 Dic. 2025',
+      );
+    }
+
+    // Estado de error
+    if (_hotelController.hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Error al cargar las reservas',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _hotelController.errorMessage ?? 'Error desconocido',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                if (userId != null) {
+                  await _loadHotelBookings(userId);
+                }
+              },
+              child: const Text('Reintentar'),
+            ),
+          ],
         ),
-        HotelBookingCard(
-          date: '15 Enero, 2026',
-          hotelName: 'Hotel Hilton',
-          status: 'En curso',
-          duration: '5 DÍAS',
-          dateRange: '15 Ene. 2026 - 20 Ene. 2026',
+      );
+    }
+
+    // Estado vacío
+    if (_hotelController.userBookings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.hotel_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text(
+              'No tienes reservas de hoteles',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Cuando hagas una reserva, aparecerá aquí.',
+              style: TextStyle(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                // Navegar a buscar hoteles
+                Navigator.of(
+                  context,
+                ).pop(); // O navegar a la sección de hoteles
+              },
+              child: const Text('Explorar Hoteles'),
+            ),
+          ],
         ),
-      ],
+      );
+    }
+
+    final groupedBookings = _groupHotelBookingsByDate(
+      _hotelController.userBookings,
+    );
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId != null) {
+          await _loadHotelBookings(userId);
+        }
+      },
+      child: Column(
+        children: groupedBookings.entries.map((entry) {
+          final date = entry.key;
+          final bookings = entry.value;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Encabezado de fecha
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 218, 218, 218),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Colors.black,
+                      ),
+                      child: Text(
+                        date.split(' ')[0],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '${date.split(' ')[1]} ${date.split(' ')[2]}',
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              ...bookings.map((booking) {
+                return HotelBookingCard(
+                  booking: booking, // Pasar el objeto booking completo
+                );
+              }),
+
+              const SizedBox(height: 10),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -234,7 +409,7 @@ class _BookingsPageState extends State<BookingsPage> {
         ),
         const SizedBox(height: 20),
         AnimatedBuilder(
-          animation: _controller,
+          animation: _flightController,
           builder: (context, _) {
             return content();
           },
