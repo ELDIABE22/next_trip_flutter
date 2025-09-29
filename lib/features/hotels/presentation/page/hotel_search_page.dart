@@ -87,7 +87,7 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
             SizedBox(height: 16),
             Text(
               'Cargando hoteles...',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(fontSize: 16, color: Colors.black),
             ),
           ],
         ),
@@ -111,7 +111,7 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
               child: Text(
                 _hotelController.errorMessage ?? 'Error desconocido',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
+                style: const TextStyle(color: Colors.black),
               ),
             ),
             const SizedBox(height: 16),
@@ -146,7 +146,7 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.hotel_outlined, size: 64, color: Colors.grey),
+            const Icon(Icons.hotel_outlined, size: 64, color: Colors.black),
             const SizedBox(height: 16),
             Text(
               destinationCity != null
@@ -155,7 +155,7 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                color: Colors.black,
               ),
               textAlign: TextAlign.center,
             ),
@@ -199,7 +199,7 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 'Mostrando ${_hotelController.hotels.length} hoteles',
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                style: TextStyle(color: Colors.black, fontSize: 14),
               ),
             ),
         ],

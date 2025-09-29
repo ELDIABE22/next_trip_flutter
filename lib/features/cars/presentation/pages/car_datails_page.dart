@@ -1,8 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/features/cars/data/controllers/car_controller.dart';
 import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/presentation/pages/car_booking_page.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carDetailsPage/car_attribute_card.dart';
 import 'package:next_trip/core/widgets/bottom_reserve_panel.dart';
 
@@ -257,8 +259,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               Text(
                 car.category,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[700],
+                  fontSize: 15,
+                  color: Colors.grey[900],
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -266,8 +268,8 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
               Text(
                 '${car.year} • ${car.color}',
                 style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
+                  fontSize: 12,
+                  color: Colors.grey[800],
                   fontWeight: FontWeight.w400,
                 ),
               ),
@@ -287,7 +289,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
             ),
             const Text(
               'por día',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+              style: TextStyle(fontSize: 12, color: Colors.black),
             ),
           ],
         ),
@@ -415,29 +417,13 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   }
 
   void _handleReservation(Car car) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reservar Carro'),
-        content: Text('¿Confirmar reserva de ${car.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Reserva confirmada para ${car.name}'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            child: const Text('Confirmar'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CarBookingPage(
+          car: car,
+          userId: FirebaseAuth.instance.currentUser!.uid,
+        ),
       ),
     );
   }
