@@ -84,52 +84,7 @@ class AuthService {
           birthDate: birthDate,
         );
 
-        final usersRef = _firestore.collection('users').doc(uid);
-        final emailRef = _firestore
-            .collection('unique_emails')
-            .doc(normalizedEmail);
-        final phoneRef = _firestore
-            .collection('unique_phoneNumbers')
-            .doc(normalizedPhone);
-        final ccRef = _firestore.collection('unique_cc').doc(normalizedCc);
-
-        try {
-          await _firestore.runTransaction((tx) async {
-            final emailSnap = await tx.get(emailRef);
-            if (emailSnap.exists) {
-              throw 'El correo ya está registrado.';
-            }
-
-            final phoneSnap = await tx.get(phoneRef);
-            if (phoneSnap.exists) {
-              throw 'El teléfono ya está registrado.';
-            }
-
-            final ccSnap = await tx.get(ccRef);
-            if (ccSnap.exists) {
-              throw 'La cédula ya está registrada.';
-            }
-
-            tx.set(usersRef, user.toMap());
-            tx.set(emailRef, {
-              'uid': uid,
-              'createdAt': DateTime.now().toIso8601String(),
-            });
-            tx.set(phoneRef, {
-              'uid': uid,
-              'createdAt': DateTime.now().toIso8601String(),
-            });
-            tx.set(ccRef, {
-              'uid': uid,
-              'createdAt': DateTime.now().toIso8601String(),
-            });
-          });
-        } catch (e) {
-          try {
-            await _auth.currentUser?.delete();
-          } catch (_) {}
-          rethrow;
-        }
+        await _firestore.collection('users').doc(uid).set(user.toMap());
       }
 
       return userCredential;
