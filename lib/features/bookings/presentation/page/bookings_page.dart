@@ -172,77 +172,166 @@ class _BookingsPageState extends State<BookingsPage> {
 
   Widget flightBookings() {
     if (_flightController.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Cargando tus reservas de vuelos...'),
+          ],
+        ),
+      );
     }
 
     if (_flightController.error != null) {
-      return Center(child: Text(_flightController.error!));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              _flightController.error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red),
+            ),
+            const SizedBox(height: 16),
+            CustomButton(
+              onPressed: () async {
+                final userId = FirebaseAuth.instance.currentUser?.uid;
+                if (userId != null) {
+                  await _flightController.fetchUserBookings(userId);
+                }
+              },
+              text: 'Reintentar',
+            ),
+          ],
+        ),
+      );
     }
 
     if (_flightController.bookings.isEmpty) {
-      return const Center(child: Text('No tienes reservas de vuelos.'));
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.flight_outlined, size: 64, color: Colors.black),
+            const SizedBox(height: 16),
+            const Text(
+              'No tienes reservas de vuelos',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Cuando hagas una reserva, aparecerá aquí.',
+              style: TextStyle(color: Colors.black),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            CustomButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              text: 'Explorar Vuelos',
+            ),
+          ],
+        ),
+      );
     }
 
     final groupedBookings = _groupBookingsByDate(_flightController.bookings);
 
-    return Column(
-      children: groupedBookings.entries.map((entry) {
-        final date = entry.key;
-        final bookings = entry.value;
+    return RefreshIndicator(
+      onRefresh: () async {
+        final userId = FirebaseAuth.instance.currentUser?.uid;
+        if (userId != null) {
+          await _flightController.fetchUserBookings(userId);
+        }
+      },
+      child: Column(
+        children: groupedBookings.entries.map((entry) {
+          final date = entry.key;
+          final bookings = entry.value;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 218, 218, 218),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      color: Colors.black,
-                    ),
-                    child: Text(
-                      date.split(' ')[0],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 218, 218, 218),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(15),
+                        color: Colors.black,
+                      ),
+                      child: Text(
+                        date.split(' ')[0],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    '${date.split(' ')[1]} ${date.split(' ')[2]}',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 2,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        '${date.split(' ')[1]} ${date.split(' ')[2]}',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 2,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${bookings.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            ...bookings.map((booking) {
-              return FlightBookingCard(booking: booking);
-            }),
+              ...bookings.map((booking) {
+                return FlightBookingCard(booking: booking);
+              }),
 
-            const SizedBox(height: 10),
-          ],
-        );
-      }).toList(),
+              const SizedBox(height: 10),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -401,7 +490,6 @@ class _BookingsPageState extends State<BookingsPage> {
     );
   }
 
-  // NUEVO: Widget para reservas de carros con datos reales
   Widget carBookings() {
     // Estado de carga
     if (_carBookingController.isLoading) {
