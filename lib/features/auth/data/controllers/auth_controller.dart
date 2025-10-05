@@ -21,6 +21,9 @@ class AuthController extends ChangeNotifier {
     // Escuchar los cambios de estado de autenticación
     _authService.authStateChanges.listen((User? user) {
       _user = user;
+      if (user == null) {
+        _userData = null; // Limpiar datos del usuario al cerrar sesión
+      }
       notifyListeners();
     });
   }
@@ -40,6 +43,7 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Iniciar sesión
   Future<bool> signIn({required String email, required String password}) async {
     try {
       _setLoading(true);
@@ -53,6 +57,26 @@ class AuthController extends ChangeNotifier {
       if (_authService.currentUser != null) {
         _userData = await _authService.getCurrentUserData();
       }
+
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  // Cerrar sesión
+  Future<bool> signOut() async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      await _authService.signOut();
+
+      _userData = null;
+      _user = null;
 
       _setLoading(false);
       return true;
@@ -77,7 +101,6 @@ class AuthController extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
 
-      // Registrar usuario con correo electrónico y contraseña
       await _authService.registerWithEmailAndPassword(
         email: email.trim(),
         password: password,
@@ -132,20 +155,6 @@ class AuthController extends ChangeNotifier {
       _setError(e.toString());
       _setLoading(false);
       return false;
-    }
-  }
-
-  // Cerrar sesión
-  Future<void> signOut() async {
-    try {
-      _setLoading(true);
-      await _authService.signOut();
-      _userData = null;
-      _setLoading(false);
-    } catch (e) {
-      _setError(e.toString());
-      _setLoading(false);
-      rethrow;
     }
   }
 

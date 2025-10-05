@@ -34,6 +34,8 @@ class AuthService {
   Future<void> signOut() async {
     try {
       await _auth.signOut();
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
     } catch (e) {
       throw 'Error al cerrar sesión: ${e.toString()}';
     }
