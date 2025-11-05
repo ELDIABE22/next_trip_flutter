@@ -1,4 +1,4 @@
-class UserModel {
+class User {
   final String id;
   final String fullName;
   final String email;
@@ -8,7 +8,7 @@ class UserModel {
   final DateTime birthDate;
   final DateTime createdAt;
 
-  UserModel({
+  User({
     required this.id,
     required this.fullName,
     required this.email,
@@ -16,36 +16,10 @@ class UserModel {
     required this.cc,
     required this.gender,
     required this.birthDate,
-    DateTime? createdAt,
-  }) : createdAt = createdAt ?? DateTime.now();
+    required this.createdAt,
+  });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'fullName': fullName,
-      'email': email,
-      'phoneNumber': phoneNumber,
-      'cc': cc,
-      'gender': gender,
-      'birthDate': birthDate.toIso8601String(),
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
-
-  factory UserModel.fromMap(Map<String, dynamic> map, String documentId) {
-    return UserModel(
-      id: map['id'] ?? '',
-      fullName: map['fullName'] ?? '',
-      email: map['email'] ?? '',
-      phoneNumber: map['phoneNumber'],
-      cc: map['cc'] ?? '',
-      gender: map['gender'],
-      birthDate: DateTime.parse(map['birthDate']),
-      createdAt: DateTime.parse(map['createdAt']),
-    );
-  }
-
-  UserModel copyWith({
+  User copyWith({
     String? id,
     String? fullName,
     String? email,
@@ -55,7 +29,7 @@ class UserModel {
     DateTime? birthDate,
     DateTime? createdAt,
   }) {
-    return UserModel(
+    return User(
       id: id ?? this.id,
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,

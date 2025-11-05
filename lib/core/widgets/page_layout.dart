@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/custom_navbar.dart';
-import 'package:next_trip/core/widgets/header.dart';
+import 'package:next_trip/core/widgets/header/header.dart';
 
 class PageLayout extends StatelessWidget {
   final String title;
