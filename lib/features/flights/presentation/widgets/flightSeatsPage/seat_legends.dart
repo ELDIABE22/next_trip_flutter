@@ -9,14 +9,13 @@ class SeatLegends extends StatelessWidget {
       children: [
         Expanded(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle, color: Colors.black, size: 20),
-                  SizedBox(width: 5),
-                  Text(
+                  const Icon(Icons.check_circle, color: Colors.black, size: 20),
+                  const SizedBox(width: 5),
+                  const Text(
                     "Seleccionado",
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
@@ -27,14 +26,17 @@ class SeatLegends extends StatelessWidget {
         ),
         Expanded(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.circle_outlined, color: Colors.green, size: 20),
-                  SizedBox(width: 5),
-                  Text(
+                  const Icon(
+                    Icons.circle_outlined,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 5),
+                  const Text(
                     "Disponible",
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
@@ -45,14 +47,13 @@ class SeatLegends extends StatelessWidget {
         ),
         Expanded(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.cancel, color: Colors.red, size: 20),
-                  SizedBox(width: 5),
-                  Text(
+                  const Icon(Icons.cancel, color: Colors.red, size: 20),
+                  const SizedBox(width: 5),
+                  const Text(
                     "No disponible",
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),

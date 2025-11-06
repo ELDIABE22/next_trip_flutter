@@ -7,6 +7,7 @@ class CollapsiblePassengerBox extends StatefulWidget {
   final IconData icon;
   final VoidCallback onRemove;
   final ValueChanged<Map<String, String>> onChanged;
+  final Map<String, String>? initialData;
 
   const CollapsiblePassengerBox({
     super.key,
@@ -14,6 +15,7 @@ class CollapsiblePassengerBox extends StatefulWidget {
     required this.icon,
     required this.onRemove,
     required this.onChanged,
+    this.initialData,
   });
 
   @override
@@ -31,6 +33,26 @@ class _CollapsiblePassengerBoxState extends State<CollapsiblePassengerBox> {
   final _documentNumber = TextEditingController();
   final _email = TextEditingController();
   final _phone = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.initialData != null) {
+      _fullName.text = widget.initialData!['fullName'] ?? '';
+      _birthDate.text = widget.initialData!['birthDate'] ?? '';
+      _gender.text = widget.initialData!['gender'] ?? '';
+      _documentNumber.text = widget.initialData!['cc'] ?? '';
+      _email.text = widget.initialData!['email'] ?? '';
+      _phone.text = widget.initialData!['phone'] ?? '';
+
+      isExpanded = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _notifyParent();
+      });
+    }
+  }
 
   void _validateBirthDate(String value) {
     if (value.isEmpty) {

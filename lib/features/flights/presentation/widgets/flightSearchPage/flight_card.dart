@@ -1,38 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/flights/data/models/flight_model.dart';
+import 'package:intl/intl.dart';
+import 'package:next_trip/features/flights/domain/entities/flight.dart';
 
 class FlightCard extends StatefulWidget {
-  final String total;
-  final String? flightDate;
-  final String? departureTime;
-  final String? arrivalTime;
-  final String? originIata;
-  final String? destinationIata;
-  final String? durationLabel;
-  final bool? isDirect;
-  final String? currency;
-  final bool navigateToSeatsOnTap;
-  final VoidCallback? onTap;
+  final Flight flight;
   final bool showSelectButton;
   final bool isSelected;
-  final Flight? flight;
+  final VoidCallback? onTap;
 
   const FlightCard({
     super.key,
-    this.flightDate,
-    required this.total,
-    this.departureTime,
-    this.arrivalTime,
-    this.originIata,
-    this.destinationIata,
-    this.durationLabel,
-    this.isDirect,
-    this.currency,
-    this.navigateToSeatsOnTap = true,
-    this.onTap,
+    required this.flight,
     this.showSelectButton = false,
     this.isSelected = false,
-    this.flight,
+    this.onTap,
   });
 
   @override
@@ -44,8 +25,40 @@ class _FlightCardState extends State<FlightCard>
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _shadowAnimation;
-  // ignore: unused_field
-  bool _isPressed = false;
+
+  String get departureTime =>
+      DateFormat('HH:mm').format(widget.flight.departureDateTime);
+  String get arrivalTime =>
+      DateFormat('HH:mm').format(widget.flight.arrivalDateTime);
+  String get durationLabel {
+    final hours = widget.flight.duration.inHours;
+    final minutes = widget.flight.duration.inMinutes % 60;
+    return '${hours}h ${minutes}m';
+  }
+
+  String get total => NumberFormat('#,###').format(widget.flight.totalPriceCop);
+  String get flightDate =>
+      DateFormat('dd/MM/yyyy').format(widget.flight.departureDateTime);
+
+  String get availabilityText {
+    final seats = widget.flight.availableSeats ?? 0;
+    if (seats > 10) return '$seats disponibles';
+    if (seats > 5) return 'Pocas plazas';
+    return 'Últimas plazas';
+  }
+
+  String get availabilityColor {
+    final seats = widget.flight.availableSeats ?? 0;
+    if (seats > 10) return 'green';
+    if (seats > 5) return 'orange';
+    return 'red';
+  }
+
+  String get priceCategory {
+    if (widget.flight.totalPriceCop < 200000) return 'Económico';
+    if (widget.flight.totalPriceCop < 500000) return 'Medio';
+    return 'Premium';
+  }
 
   @override
   void initState() {
@@ -68,33 +81,15 @@ class _FlightCardState extends State<FlightCard>
     super.dispose();
   }
 
-  void _onTapDown(TapDownDetails details) {
-    setState(() => _isPressed = true);
-    _animationController.forward();
-  }
-
-  void _onTapUp(TapUpDetails details) {
-    setState(() => _isPressed = false);
-    _animationController.reverse();
-  }
-
-  void _onTapCancel() {
-    setState(() => _isPressed = false);
-    _animationController.reverse();
-  }
-
   @override
   Widget build(BuildContext context) {
     final primaryColor = widget.isSelected ? Colors.green : Colors.black;
     final backgroundColor = widget.isSelected
-        ? Colors.green.withValues(alpha: 0.05)
+        ? Colors.green.withAlpha(12)
         : Colors.white;
 
     return GestureDetector(
-      onTap: widget.navigateToSeatsOnTap ? widget.onTap : null,
-      onTapDown: _onTapDown,
-      onTapUp: _onTapUp,
-      onTapCancel: _onTapCancel,
+      onTap: widget.onTap,
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {
@@ -106,15 +101,12 @@ class _FlightCardState extends State<FlightCard>
                 borderRadius: BorderRadius.circular(20),
                 border: widget.isSelected
                     ? Border.all(color: Colors.green, width: 2)
-                    : Border.all(
-                        color: Colors.grey.withValues(alpha: 0.1),
-                        width: 1,
-                      ),
+                    : Border.all(color: Colors.grey.withAlpha(25), width: 1),
                 boxShadow: [
                   BoxShadow(
                     color: widget.isSelected
-                        ? Colors.green.withValues(alpha: 0.25)
-                        : Colors.black.withValues(alpha: 0.08),
+                        ? Colors.green.withAlpha(65)
+                        : Colors.black.withAlpha(20),
                     spreadRadius: widget.isSelected ? 1 : 0,
                     blurRadius: _shadowAnimation.value,
                     offset: Offset(0, _shadowAnimation.value / 2),
@@ -130,15 +122,14 @@ class _FlightCardState extends State<FlightCard>
                       end: Alignment.bottomRight,
                       colors: widget.isSelected
                           ? [
-                              Colors.green.withValues(alpha: 0.08),
-                              Colors.green.withValues(alpha: 0.02),
+                              Colors.green.withAlpha(20),
+                              Colors.green.withAlpha(5),
                             ]
-                          : [Colors.white, Colors.grey.withValues(alpha: 0.02)],
+                          : [Colors.white, Colors.grey.withAlpha(5)],
                     ),
                   ),
                   child: Column(
                     children: [
-                      // Header moderno con gradiente sutil
                       Container(
                         padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
                         decoration: BoxDecoration(
@@ -147,23 +138,21 @@ class _FlightCardState extends State<FlightCard>
                             end: Alignment.bottomCenter,
                             colors: [
                               backgroundColor,
-                              backgroundColor.withValues(alpha: 0.7),
+                              backgroundColor.withAlpha(180),
                             ],
                           ),
                         ),
                         child: Column(
                           children: [
-                            // Información principal del vuelo con mejor espaciado
                             Row(
                               children: [
-                                // Salida
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        widget.departureTime ?? '—',
+                                        departureTime,
                                         style: TextStyle(
                                           fontSize: 28,
                                           fontWeight: FontWeight.w700,
@@ -173,7 +162,7 @@ class _FlightCardState extends State<FlightCard>
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        widget.originIata ?? '',
+                                        widget.flight.originIata,
                                         style: TextStyle(
                                           fontSize: 16,
                                           color: Colors.grey[600],
@@ -181,23 +170,20 @@ class _FlightCardState extends State<FlightCard>
                                           letterSpacing: 1.5,
                                         ),
                                       ),
-                                      if (widget.flight != null) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          widget.flight!.originCity,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[500],
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        widget.flight.originCity,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[500],
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      ],
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ],
                                   ),
                                 ),
-
                                 Expanded(
                                   flex: 2,
                                   child: Column(
@@ -212,9 +198,7 @@ class _FlightCardState extends State<FlightCard>
                                             decoration: BoxDecoration(
                                               gradient: LinearGradient(
                                                 colors: [
-                                                  primaryColor.withValues(
-                                                    alpha: 0.3,
-                                                  ),
+                                                  primaryColor.withAlpha(75),
                                                   primaryColor,
                                                 ],
                                               ),
@@ -229,14 +213,15 @@ class _FlightCardState extends State<FlightCard>
                                               shape: BoxShape.circle,
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: primaryColor
-                                                      .withValues(alpha: 0.3),
+                                                  color: primaryColor.withAlpha(
+                                                    75,
+                                                  ),
                                                   blurRadius: 8,
                                                   spreadRadius: 0,
                                                 ),
                                               ],
                                             ),
-                                            child: Icon(
+                                            child: const Icon(
                                               Icons.flight,
                                               color: Colors.white,
                                               size: 18,
@@ -249,9 +234,7 @@ class _FlightCardState extends State<FlightCard>
                                               gradient: LinearGradient(
                                                 colors: [
                                                   primaryColor,
-                                                  primaryColor.withValues(
-                                                    alpha: 0.3,
-                                                  ),
+                                                  primaryColor.withAlpha(75),
                                                 ],
                                               ),
                                               borderRadius:
@@ -261,8 +244,6 @@ class _FlightCardState extends State<FlightCard>
                                         ],
                                       ),
                                       const SizedBox(height: 12),
-
-                                      // Badges de información
                                       Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
@@ -273,22 +254,20 @@ class _FlightCardState extends State<FlightCard>
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: (widget.isDirect ?? true)
-                                                  ? Colors.green.withValues(
-                                                      alpha: 0.1,
-                                                    )
-                                                  : Colors.orange.withValues(
-                                                      alpha: 0.1,
-                                                    ),
+                                              color:
+                                                  (widget.flight.isDirect ??
+                                                      true)
+                                                  ? Colors.green.withAlpha(25)
+                                                  : Colors.orange.withAlpha(25),
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                               border: Border.all(
-                                                color: (widget.isDirect ?? true)
-                                                    ? Colors.green.withValues(
-                                                        alpha: 0.3,
-                                                      )
-                                                    : Colors.orange.withValues(
-                                                        alpha: 0.3,
+                                                color:
+                                                    (widget.flight.isDirect ??
+                                                        true)
+                                                    ? Colors.green.withAlpha(75)
+                                                    : Colors.orange.withAlpha(
+                                                        75,
                                                       ),
                                               ),
                                             ),
@@ -296,24 +275,29 @@ class _FlightCardState extends State<FlightCard>
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Icon(
-                                                  (widget.isDirect ?? true)
+                                                  (widget.flight.isDirect ??
+                                                          true)
                                                       ? Icons.trending_flat
                                                       : Icons
                                                             .connecting_airports,
                                                   size: 12,
                                                   color:
-                                                      (widget.isDirect ?? true)
+                                                      (widget.flight.isDirect ??
+                                                          true)
                                                       ? Colors.green[700]
                                                       : Colors.orange[700],
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                  (widget.isDirect ?? true)
+                                                  (widget.flight.isDirect ??
+                                                          true)
                                                       ? 'Directo'
                                                       : 'Escalas',
                                                   style: TextStyle(
                                                     color:
-                                                        (widget.isDirect ??
+                                                        (widget
+                                                                .flight
+                                                                .isDirect ??
                                                             true)
                                                         ? Colors.green[700]
                                                         : Colors.orange[700],
@@ -327,10 +311,8 @@ class _FlightCardState extends State<FlightCard>
                                         ],
                                       ),
                                       const SizedBox(height: 6),
-
-                                      // Duración
                                       Text(
-                                        widget.durationLabel ?? '',
+                                        durationLabel,
                                         style: TextStyle(
                                           fontSize: 13,
                                           color: Colors.grey[600],
@@ -340,14 +322,12 @@ class _FlightCardState extends State<FlightCard>
                                     ],
                                   ),
                                 ),
-
-                                // Llegada
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                        widget.arrivalTime ?? '—',
+                                        arrivalTime,
                                         style: TextStyle(
                                           fontSize: 28,
                                           fontWeight: FontWeight.w700,
@@ -357,7 +337,7 @@ class _FlightCardState extends State<FlightCard>
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        widget.destinationIata ?? '',
+                                        widget.flight.destinationIata,
                                         style: TextStyle(
                                           fontSize: 16,
                                           color: Colors.grey[600],
@@ -365,166 +345,147 @@ class _FlightCardState extends State<FlightCard>
                                           letterSpacing: 1.5,
                                         ),
                                       ),
-                                      if (widget.flight != null) ...[
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          widget.flight!.destinationCity,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[500],
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.end,
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        widget.flight.destinationCity,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[500],
+                                          fontWeight: FontWeight.w500,
                                         ),
-                                      ],
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.end,
+                                      ),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
-
-                            if (widget.flight != null) ...[
-                              const SizedBox(height: 16),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.grey.withValues(alpha: 0.1),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    // Aerolínea y vuelo
-                                    Expanded(
-                                      child: Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(6),
-                                            decoration: BoxDecoration(
-                                              color: Colors.blue.withValues(
-                                                alpha: 0.1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Icon(
-                                              Icons.business,
-                                              size: 14,
-                                              color: Colors.blue[700],
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  widget.flight!.airline ??
-                                                      'Aerolínea',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color: Colors.grey[800],
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                                if (widget
-                                                        .flight!
-                                                        .flightNumber !=
-                                                    null)
-                                                  Text(
-                                                    widget
-                                                        .flight!
-                                                        .flightNumber!,
-                                                    style: TextStyle(
-                                                      fontSize: 11,
-                                                      color: Colors.grey[500],
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-
-                                    // Disponibilidad
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _getAvailabilityColor()
-                                            .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.airline_seat_recline_normal,
-                                            size: 12,
-                                            color: _getAvailabilityColor(),
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            widget.flight!.availabilityText,
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: _getAvailabilityColor(),
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withAlpha(12),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.grey.withAlpha(25),
                                 ),
                               ),
-                            ],
-
-                            // Fecha si está disponible
-                            if (widget.flightDate != null) ...[
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Icon(
-                                    Icons.calendar_today,
-                                    size: 14,
-                                    color: Colors.grey[500],
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue.withAlpha(25),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.business,
+                                            size: 14,
+                                            color: Colors.blue[700],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                widget.flight.airline ??
+                                                    'Aerolínea',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[800],
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              if (widget.flight.flightNumber !=
+                                                  null)
+                                                Text(
+                                                  widget.flight.flightNumber!,
+                                                  style: TextStyle(
+                                                    fontSize: 11,
+                                                    color: Colors.grey[500],
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    widget.flightDate!,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _getAvailabilityColor().withAlpha(
+                                        25,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.airline_seat_recline_normal,
+                                          size: 12,
+                                          color: _getAvailabilityColor(),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          availabilityText,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: _getAvailabilityColor(),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today,
+                                  size: 14,
+                                  color: Colors.grey[500],
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  flightDate,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
-
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
@@ -533,18 +494,17 @@ class _FlightCardState extends State<FlightCard>
                             end: Alignment.bottomCenter,
                             colors: widget.isSelected
                                 ? [
-                                    Colors.green.withValues(alpha: 0.03),
-                                    Colors.green.withValues(alpha: 0.08),
+                                    Colors.green.withAlpha(7),
+                                    Colors.green.withAlpha(20),
                                   ]
                                 : [
-                                    Colors.grey.withValues(alpha: 0.02),
-                                    Colors.grey.withValues(alpha: 0.05),
+                                    Colors.grey.withAlpha(5),
+                                    Colors.grey.withAlpha(12),
                                   ],
                           ),
                         ),
                         child: Row(
                           children: [
-                            // Precio destacado
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -564,7 +524,7 @@ class _FlightCardState extends State<FlightCard>
                                     textBaseline: TextBaseline.alphabetic,
                                     children: [
                                       Text(
-                                        widget.currency ?? 'COP',
+                                        'COP',
                                         style: TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -573,9 +533,9 @@ class _FlightCardState extends State<FlightCard>
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
-                                        widget.total,
+                                        total,
                                         style: TextStyle(
-                                          fontSize: 32,
+                                          fontSize: 28,
                                           fontWeight: FontWeight.w800,
                                           color: Colors.grey[900],
                                           letterSpacing: -1,
@@ -583,32 +543,30 @@ class _FlightCardState extends State<FlightCard>
                                       ),
                                     ],
                                   ),
-                                  if (widget.flight != null) ...[
-                                    const SizedBox(height: 2),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
+                                  const SizedBox(height: 2),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _getPriceCategoryColor().withAlpha(
+                                        25,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: _getPriceCategoryColor()
-                                            .withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        widget.flight!.priceCategory,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: _getPriceCategoryColor(),
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      priceCategory,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: _getPriceCategoryColor(),
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ],
                               ),
                             ),
-
                             if (widget.showSelectButton) ...[
                               const SizedBox(width: 20),
                               AnimatedContainer(
@@ -649,9 +607,7 @@ class _FlightCardState extends State<FlightCard>
                                       vertical: 12,
                                     ),
                                     elevation: widget.isSelected ? 0 : 4,
-                                    shadowColor: primaryColor.withValues(
-                                      alpha: 0.3,
-                                    ),
+                                    shadowColor: primaryColor.withAlpha(75),
                                   ),
                                 ),
                               ),
@@ -659,7 +615,7 @@ class _FlightCardState extends State<FlightCard>
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: primaryColor.withValues(alpha: 0.1),
+                                  color: primaryColor.withAlpha(25),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
@@ -684,17 +640,17 @@ class _FlightCardState extends State<FlightCard>
   }
 
   Color _getAvailabilityColor() {
-    if (widget.flight?.availabilityColor == 'green') return Colors.green;
-    if (widget.flight?.availabilityColor == 'orange') return Colors.red;
+    if (availabilityColor == 'green') return Colors.green;
+    if (availabilityColor == 'orange') return Colors.orange;
     return Colors.red;
   }
 
   Color _getPriceCategoryColor() {
-    switch (widget.flight?.priceCategory) {
+    switch (priceCategory) {
       case 'Económico':
         return Colors.blue;
       case 'Medio':
-        return Colors.red;
+        return Colors.orange;
       case 'Premium':
         return Colors.purple;
       default:

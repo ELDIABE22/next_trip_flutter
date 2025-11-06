@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class TripTypeButtont extends StatelessWidget {
+class TripTypeButton extends StatelessWidget {
   final String text;
   final bool isSelected;
   final IconData icon;
   final VoidCallback onTap;
 
-  const TripTypeButtont({
+  const TripTypeButton({
     super.key,
     required this.text,
     required this.isSelected,

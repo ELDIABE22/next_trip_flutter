@@ -1,13 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/utils/helpers.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
-import 'package:next_trip/features/bookings/data/controllers/flight_booking_controller.dart';
-import 'package:next_trip/features/flights/data/models/flight_model.dart';
-import 'package:next_trip/features/flights/data/models/passenger_model.dart';
-import 'package:next_trip/features/flights/data/models/seat_model.dart';
+import 'package:next_trip/features/flights/application/bloc/flight_bloc.dart';
+import 'package:next_trip/features/flights/application/bloc/flight_event.dart';
+import 'package:next_trip/features/flights/domain/entities/flight.dart';
+import 'package:next_trip/features/flights/domain/entities/passenger.dart';
+import 'package:next_trip/features/flights/domain/entities/seat.dart';
 import 'package:next_trip/features/flights/presentation/pages/payment_success_screen.dart';
 
 class FlightBookingPayment extends StatefulWidget {
@@ -43,13 +45,11 @@ class FlightBookingPayment extends StatefulWidget {
 }
 
 class _FlightBookingPaymentState extends State<FlightBookingPayment> {
-  final FlightBookingController _bookingController = FlightBookingController();
   final TextEditingController _cardNumberController = TextEditingController();
   final TextEditingController _expiryController = TextEditingController();
   final TextEditingController _cvvController = TextEditingController();
   final TextEditingController _cardholderController = TextEditingController();
   bool _isLoading = false;
-  bool _showCardForm = false;
 
   String calculateTotalPrice() {
     if (widget.isRoundTrip &&
@@ -98,25 +98,35 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
     try {
       await Future.delayed(const Duration(seconds: 2));
 
-      if (widget.isRoundTrip) {
-        if (widget.outboundFlight != null && widget.returnFlight != null) {
-          await _bookingController.createRoundTripBooking(
-            userId: FirebaseAuth.instance.currentUser!.uid,
+      if (!mounted) return;
+
+      final userId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+
+      if (widget.isRoundTrip &&
+          widget.outboundFlight != null &&
+          widget.returnFlight != null &&
+          widget.outboundSeats != null &&
+          widget.returnSeats != null) {
+        context.read<FlightBloc>().add(
+          CreateRoundTripBookingRequested(
+            userId: userId,
             outboundFlight: widget.outboundFlight!,
             returnFlight: widget.returnFlight!,
+            outboundSeats: widget.outboundSeats!,
+            returnSeats: widget.returnSeats!,
             passengers: widget.passengers,
-            outboundSeats: widget.outboundSeats ?? [],
-            returnSeats: widget.returnSeats ?? [],
             totalPrice: getTotalPriceValue(),
-          );
-        }
+          ),
+        );
       } else {
-        await _bookingController.createBooking(
-          userId: FirebaseAuth.instance.currentUser!.uid,
-          flight: widget.flight,
-          passengers: widget.passengers,
-          selectedSeats: widget.selectedSeats,
-          totalPrice: getTotalPriceValue().toInt(),
+        context.read<FlightBloc>().add(
+          CreateBookingRequested(
+            userId: userId,
+            flight: widget.flight,
+            seats: widget.selectedSeats,
+            passengers: widget.passengers,
+            totalPrice: getTotalPriceValue().toInt(),
+          ),
         );
       }
 
@@ -192,9 +202,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                   child: Column(
                     children: [
                       _buildSummaryCard(),
-
                       const SizedBox(height: 20),
-
                       if (widget.isRoundTrip) ...[
                         _buildFlightDetailsCard(
                           widget.outboundFlight!,
@@ -216,7 +224,6 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                         ),
                         const SizedBox(height: 20),
                       ],
-
                       // _buildPaymentMethodCard(),
                       const SizedBox(height: 100),
                     ],
@@ -224,8 +231,6 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
                 ),
               ),
             ),
-
-            // Botón de pagar
             _buildPayButton(),
           ],
         ),
@@ -302,10 +307,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
               ],
             ),
           ),
-
           const SizedBox(height: 15),
-
-          // Información de asientos
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -335,7 +337,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withAlpha(25),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -360,7 +362,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
           ),
           const SizedBox(height: 12),
           Text(
-            flight.routeTitle,
+            '${flight.originCity} → ${flight.destinationCity}',
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -406,142 +408,6 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
     );
   }
 
-  // ignore: unused_element
-  Widget _buildPaymentMethodCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF000000),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _showCardForm = !_showCardForm;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Icon(Icons.credit_card, color: Colors.white, size: 24),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Agregar tarjeta',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          'Débito con CVV, crédito Visa o Mastercard',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Checkbox(
-                    value: _showCardForm,
-                    onChanged: (value) {
-                      setState(() {
-                        _showCardForm = value ?? false;
-                      });
-                    },
-                    activeColor: const Color(0xFF4CAF50),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          if (_showCardForm)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Colors.grey[700]!, width: 1),
-                ),
-              ),
-              child: Column(
-                children: [
-                  _buildCardField(
-                    controller: _cardNumberController,
-                    hintText: '0000 0000 0000 0000',
-                    icon: Icons.credit_card,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildCardField(
-                          controller: _expiryController,
-                          hintText: 'MM/YY',
-                          icon: Icons.calendar_today,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildCardField(
-                          controller: _cvvController,
-                          hintText: 'CVV',
-                          icon: Icons.lock,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCardField(
-                    controller: _cardholderController,
-                    hintText: 'Nombre del titular',
-                    icon: Icons.person,
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardField({
-    required TextEditingController controller,
-    required String hintText,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              style: const TextStyle(color: Color(0xFFEFECEC), fontSize: 16),
-              keyboardType: hintText == 'CVV' || hintText.contains('0000')
-                  ? TextInputType.number
-                  : TextInputType.text,
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-                border: InputBorder.none,
-              ),
-            ),
-          ),
-          Icon(icon, color: Colors.grey[500], size: 20),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPayButton() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -549,7 +415,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withAlpha(25),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),

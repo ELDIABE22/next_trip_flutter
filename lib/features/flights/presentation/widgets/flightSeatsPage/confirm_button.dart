@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
-import 'package:next_trip/features/flights/data/models/seat_model.dart';
-import 'package:next_trip/features/flights/data/models/flight_model.dart';
+import 'package:next_trip/features/flights/domain/entities/flight.dart';
+import 'package:next_trip/features/flights/domain/entities/seat.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_passenger_data_page.dart';
 
 class ConfirmButton extends StatelessWidget {
@@ -42,7 +42,6 @@ class ConfirmButton extends StatelessWidget {
     } else {
       final outboundCount = outboundSeats?.length ?? 0;
       final returnCount = returnSeats?.length ?? 0;
-
       if (outboundCount == 0 && returnCount == 0) {
         return "Selecciona asientos para ida y regreso";
       } else if (outboundCount == 0) {
@@ -74,7 +73,7 @@ class ConfirmButton extends StatelessWidget {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Colors.black.withAlpha(25),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -86,7 +85,6 @@ class ConfirmButton extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Información de asientos seleccionados
                 if (_canContinue || isRoundTrip) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -95,13 +93,13 @@ class ConfirmButton extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: _canContinue
-                          ? Colors.green.withValues(alpha: 0.1)
-                          : Colors.orange.withValues(alpha: 0.1),
+                          ? Colors.green.withAlpha(25)
+                          : Colors.orange.withAlpha(25),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: _canContinue
-                            ? Colors.green.withValues(alpha: 0.3)
-                            : Colors.orange.withValues(alpha: 0.3),
+                            ? Colors.green.withAlpha(100)
+                            : Colors.orange.withAlpha(100),
                       ),
                     ),
                     child: Row(
@@ -118,7 +116,7 @@ class ConfirmButton extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (!isRoundTrip) ...[
+                              if (!isRoundTrip)
                                 Text(
                                   selectedSeats.isEmpty
                                       ? 'Ningún asiento seleccionado'
@@ -130,8 +128,8 @@ class ConfirmButton extends StatelessWidget {
                                         ? Colors.green
                                         : Colors.orange,
                                   ),
-                                ),
-                              ] else ...[
+                                )
+                              else ...[
                                 if ((outboundSeats?.isNotEmpty ?? false))
                                   Text(
                                     'Ida: ${outboundSeats!.map((s) => s.id).join(', ')}',
@@ -164,7 +162,7 @@ class ConfirmButton extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (_canContinue) ...[
+                        if (_canContinue)
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -183,14 +181,11 @@ class ConfirmButton extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ),
                   const SizedBox(height: 12),
                 ],
-
-                // Botón principal
                 CustomButton(
                   text: _buttonText,
                   onPressed: _canContinue
@@ -207,7 +202,6 @@ class ConfirmButton extends StatelessWidget {
 
   void _handleContinue(BuildContext context) {
     if (!isRoundTrip) {
-      // Flujo normal para solo ida
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -221,7 +215,6 @@ class ConfirmButton extends StatelessWidget {
         ),
       );
     } else {
-      // Flujo para ida y vuelta
       if (outboundFlight != null &&
           returnFlight != null &&
           (outboundSeats?.isNotEmpty ?? false) &&

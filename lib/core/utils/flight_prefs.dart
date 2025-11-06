@@ -38,7 +38,6 @@ class FlightPrefs {
       }
     } catch (e) {
       debugPrint('Error saving flight preferences: $e');
-      // You might want to handle this error in your UI or retry logic
     }
   }
 

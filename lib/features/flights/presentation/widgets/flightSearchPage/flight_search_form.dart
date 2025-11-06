@@ -20,6 +20,7 @@ class FlightSearchForm extends StatefulWidget {
     required bool isOneWay,
   })
   onSearch;
+  final VoidCallback? onTripTypeChanged;
 
   const FlightSearchForm({
     super.key,
@@ -29,6 +30,7 @@ class FlightSearchForm extends StatefulWidget {
     this.destinationCity,
     this.returnDate,
     required this.onSearch,
+    this.onTripTypeChanged,
   });
 
   @override
@@ -209,7 +211,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withAlpha(25),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -222,26 +224,31 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
           Row(
             children: [
               Expanded(
-                child: TripTypeButtont(
+                child: TripTypeButton(
                   text: 'Solo ida',
                   isSelected: isOneWay,
                   icon: Icons.arrow_forward,
-                  onTap: () => setState(() => isOneWay = true),
+                  onTap: () => {
+                    setState(() => isOneWay = true),
+                    widget.onTripTypeChanged?.call(),
+                  },
                 ),
               ),
               const SizedBox(width: 5),
               Expanded(
-                child: TripTypeButtont(
+                child: TripTypeButton(
                   text: 'Ida y vuelta',
                   isSelected: !isOneWay,
                   icon: Icons.swap_horiz,
-                  onTap: () => setState(() => isOneWay = false),
+                  onTap: () => {
+                    setState(() => isOneWay = false),
+                    widget.onTripTypeChanged?.call(),
+                  },
                 ),
               ),
             ],
           ),
           const SizedBox(height: 5),
-
           Row(
             children: [
               Expanded(
@@ -253,7 +260,6 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
                       setState(() => originController.text = originCity ?? ''),
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: IconButton(
@@ -275,7 +281,6 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
             ],
           ),
           const SizedBox(height: 5),
-
           isOneWay
               ? InputField(
                   label: 'Fecha',
@@ -307,15 +312,14 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
                     ),
                   ],
                 ),
-
           if (!isOneWay) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
+                color: Colors.blue.withAlpha(25),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                border: Border.all(color: Colors.blue.withAlpha(75)),
               ),
               child: Row(
                 children: [
@@ -335,9 +339,7 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
               ),
             ),
           ],
-
           const SizedBox(height: 10),
-
           CustomButton(
             text: _isSearching ? "Buscando..." : "Buscar vuelos",
             onPressed: _isSearching ? null : _handleSearch,
@@ -404,117 +406,6 @@ class _FlightSearchFormState extends State<FlightSearchForm> {
         ),
         backgroundColor: Colors.blue,
         duration: Duration(seconds: 1),
-      ),
-    );
-  }
-
-  void showPassengerSelector() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const Text(
-              'Seleccionar pasajeros',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Pasajeros',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      'Adultos y niños',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: passengers > 1
-                          ? () => setState(() => passengers--)
-                          : null,
-                      icon: Icon(
-                        Icons.remove_circle_outline,
-                        color: passengers > 1 ? Colors.blue : Colors.grey,
-                      ),
-                    ),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blue),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$passengers',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: passengers < 9
-                          ? () => setState(() => passengers++)
-                          : null,
-                      icon: Icon(
-                        Icons.add_circle_outline,
-                        color: passengers < 9 ? Colors.blue : Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: const Text(
-                  'Confirmar',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

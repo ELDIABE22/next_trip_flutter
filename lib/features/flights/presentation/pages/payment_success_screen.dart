@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:next_trip/core/utils/helpers.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/features/bookings/presentation/page/bookings_page.dart';
-import 'package:next_trip/features/flights/data/models/flight_model.dart';
+import 'package:next_trip/features/flights/domain/entities/flight.dart';
 
 class PaymentSuccessScreen extends StatelessWidget {
   final Flight flight;
@@ -30,12 +30,11 @@ class PaymentSuccessScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 40),
-
               Container(
                 width: 150,
                 height: 150,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF38b000).withValues(alpha: 0.1),
+                  color: const Color(0xFF38b000).withAlpha(25),
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
@@ -46,10 +45,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(height: 32),
-
-              // Título principal
               const Text(
                 '¡Pago Exitoso!',
                 style: TextStyle(
@@ -58,10 +54,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   color: Color(0xFF38b000),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // Subtítulo con información del tipo de reserva
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Text(
@@ -72,10 +65,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 16, color: Colors.grey),
                 ),
               ),
-
               const SizedBox(height: 24),
-
-              // Badge de tipo de reserva
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -83,13 +73,13 @@ class PaymentSuccessScreen extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: isRoundTrip
-                      ? Colors.blue.withValues(alpha: 0.1)
-                      : Colors.green.withValues(alpha: 0.1),
+                      ? Colors.blue.withAlpha(25)
+                      : Colors.green.withAlpha(25),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isRoundTrip
-                        ? Colors.blue.withValues(alpha: 0.3)
-                        : Colors.green.withValues(alpha: 0.3),
+                        ? Colors.blue.withAlpha(75)
+                        : Colors.green.withAlpha(75),
                   ),
                 ),
                 child: Row(
@@ -112,9 +102,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 24),
-
               const Text(
                 'Detalles de la reserva',
                 style: TextStyle(
@@ -123,10 +111,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   color: Colors.black87,
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // Cards de detalles de vuelos
               if (isRoundTrip) ...[
                 _buildFlightCard(
                   context,
@@ -150,22 +135,16 @@ class PaymentSuccessScreen extends StatelessWidget {
                   Icons.flight,
                 ),
               ],
-
               const SizedBox(height: 16),
-
-              // Card de resumen
               _buildSummaryCard(),
-
               const SizedBox(height: 32),
-
-              // Información adicional
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.05),
+                  color: Colors.blue.withAlpha(12),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                  border: Border.all(color: Colors.blue.withAlpha(50)),
                 ),
                 child: Column(
                   children: [
@@ -198,10 +177,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 32),
-
-              // Action buttons
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
@@ -221,7 +197,6 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
               const SizedBox(height: 24),
             ],
           ),
@@ -260,10 +235,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
-
-              // Información principal
               _buildDetailRow('Aerolínea', flight.airline ?? 'N/A'),
               const Divider(height: 20),
               _buildDetailRow('Número de vuelo', flight.flightNumber ?? 'N/A'),
@@ -282,10 +254,10 @@ class PaymentSuccessScreen extends StatelessWidget {
               const Divider(height: 20),
               _buildDetailRow(
                 'Horario',
-                '${flight.departureTimeStr} → ${flight.arrivalTimeStr}',
+                '${formatTime(flight.departureDateTime.toIso8601String())} → ${formatTime(flight.arrivalDateTime.toIso8601String())}',
               ),
               const Divider(height: 20),
-              _buildDetailRow('Duración', flight.durationLabel),
+              _buildDetailRow('Duración', _formatDuration(flight.duration)),
             ],
           ),
         ),
@@ -298,12 +270,10 @@ class PaymentSuccessScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Card(
         elevation: 2,
-        color: const Color(0xFF38b000).withValues(alpha: 0.1),
+        color: const Color(0xFF38b000).withAlpha(25),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: const Color(0xFF38b000).withValues(alpha: 0.3),
-          ),
+          side: BorderSide(color: const Color(0xFF38b000).withAlpha(75)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -323,9 +293,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 12),
-
               _buildDetailRow('Pasajeros', passengerCount.toString()),
               const Divider(height: 20),
               _buildDetailRow(
@@ -334,7 +302,6 @@ class PaymentSuccessScreen extends StatelessWidget {
                 isBold: true,
                 textColor: const Color(0xFF38b000),
               ),
-
               if (isRoundTrip) ...[
                 const Divider(height: 20),
                 const Row(
@@ -392,5 +359,11 @@ class PaymentSuccessScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes % 60;
+    return '${hours}h ${minutes.toString().padLeft(2, '0')}m';
   }
 }

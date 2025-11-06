@@ -50,8 +50,8 @@ class ConfirmPassengerDataButton extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.white.withValues(alpha: 0.1),
-                  Colors.white.withValues(alpha: 0.9),
+                  Colors.white.withAlpha(25),
+                  Colors.white.withAlpha(230),
                 ],
               ),
             ),
@@ -64,17 +64,16 @@ class ConfirmPassengerDataButton extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Información del estado
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: _getStatusColor().withValues(alpha: 0.1),
+                        color: _getStatusColor().withAlpha(25),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: _getStatusColor().withValues(alpha: 0.3),
+                          color: _getStatusColor().withAlpha(75),
                         ),
                       ),
                       child: Row(
@@ -103,9 +102,7 @@ class ConfirmPassengerDataButton extends StatelessWidget {
                                     'Reserva de ida y vuelta',
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: _getStatusColor().withValues(
-                                        alpha: 0.8,
-                                      ),
+                                      color: _getStatusColor().withAlpha(200),
                                     ),
                                   ),
                               ],
@@ -134,10 +131,7 @@ class ConfirmPassengerDataButton extends StatelessWidget {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Botón principal
                     Opacity(
                       opacity: (allPassengersAdded && hasAtLeastOneAdult)
                           ? 1.0

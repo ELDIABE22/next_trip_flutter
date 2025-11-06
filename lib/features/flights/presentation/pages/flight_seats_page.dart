@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
-import 'package:next_trip/features/flights/data/models/seat_model.dart';
+import 'package:next_trip/features/flights/domain/entities/flight.dart';
+import 'package:next_trip/features/flights/domain/entities/seat.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSearchPage/flight_card.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSeatsPage/confirm_button.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSeatsPage/seat_grid.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSeatsPage/seat_legends.dart';
-import 'package:next_trip/features/flights/data/models/flight_model.dart';
-import 'package:intl/intl.dart';
 
 class FlightSeatsPage extends StatefulWidget {
   final Flight flight;
@@ -69,7 +68,6 @@ class _FlightSeatsPageState extends State<FlightSeatsPage>
               _buildRoundTripView()
             else
               _buildOneWayView(),
-
             _buildBottomButton(),
           ],
         ),
@@ -83,21 +81,12 @@ class _FlightSeatsPageState extends State<FlightSeatsPage>
       child: Column(
         children: [
           FlightCard(
-            total: widget.flight.totalPriceLabelCop,
-            flightDate: DateFormat(
-              'dd/MM/yyyy',
-            ).format(widget.flight.departureDateTime),
-            departureTime: widget.flight.departureTimeStr,
-            arrivalTime: widget.flight.arrivalTimeStr,
-            originIata: widget.flight.originIata,
-            destinationIata: widget.flight.destinationIata,
-            durationLabel: widget.flight.durationLabel,
-            isDirect: widget.flight.isDirect,
-            navigateToSeatsOnTap: false,
             flight: widget.flight,
+            showSelectButton: false,
+            onTap: null,
           ),
           const SizedBox(height: 10),
-          SeatLegends(),
+          const SeatLegends(),
           const SizedBox(height: 20),
           SeatGrid(
             flightId: widget.flight.id,
@@ -116,7 +105,6 @@ class _FlightSeatsPageState extends State<FlightSeatsPage>
   Widget _buildRoundTripView() {
     return Column(
       children: [
-        // Tabs para ida y vuelta
         Container(
           color: Colors.white,
           child: TabBar(
@@ -184,15 +172,13 @@ class _FlightSeatsPageState extends State<FlightSeatsPage>
             indicatorColor: _currentTab == 0 ? Colors.blue : Colors.orange,
           ),
         ),
-
-        // Contenido de cada tab
         Expanded(
           child: TabBarView(
             controller: _tabController,
             children: [_buildOutboundTab(), _buildReturnTab()],
           ),
         ),
-        SizedBox(height: 90),
+        const SizedBox(height: 90),
       ],
     );
   }
@@ -203,21 +189,12 @@ class _FlightSeatsPageState extends State<FlightSeatsPage>
       child: Column(
         children: [
           FlightCard(
-            total: widget.flight.totalPriceLabelCop,
-            flightDate: DateFormat(
-              'dd/MM/yyyy',
-            ).format(widget.flight.departureDateTime),
-            departureTime: widget.flight.departureTimeStr,
-            arrivalTime: widget.flight.arrivalTimeStr,
-            originIata: widget.flight.originIata,
-            destinationIata: widget.flight.destinationIata,
-            durationLabel: widget.flight.durationLabel,
-            isDirect: widget.flight.isDirect,
-            navigateToSeatsOnTap: false,
             flight: widget.flight,
+            showSelectButton: false,
+            onTap: null,
           ),
           const SizedBox(height: 10),
-          SeatLegends(),
+          const SeatLegends(),
           const SizedBox(height: 20),
           SeatGrid(
             flightId: widget.flight.id,
@@ -244,21 +221,12 @@ class _FlightSeatsPageState extends State<FlightSeatsPage>
       child: Column(
         children: [
           FlightCard(
-            total: widget.returnFlight!.totalPriceLabelCop,
-            flightDate: DateFormat(
-              'dd/MM/yyyy',
-            ).format(widget.returnFlight!.departureDateTime),
-            departureTime: widget.returnFlight!.departureTimeStr,
-            arrivalTime: widget.returnFlight!.arrivalTimeStr,
-            originIata: widget.returnFlight!.originIata,
-            destinationIata: widget.returnFlight!.destinationIata,
-            durationLabel: widget.returnFlight!.durationLabel,
-            isDirect: widget.returnFlight!.isDirect,
-            navigateToSeatsOnTap: false,
             flight: widget.returnFlight!,
+            showSelectButton: false,
+            onTap: null,
           ),
           const SizedBox(height: 10),
-          SeatLegends(),
+          const SeatLegends(),
           const SizedBox(height: 20),
           SeatGrid(
             flightId: widget.returnFlight!.id,
@@ -290,6 +258,7 @@ class _FlightSeatsPageState extends State<FlightSeatsPage>
       return ConfirmButton(
         selectedSeats: selectedOutboundSeats,
         flight: widget.flight,
+        isRoundTrip: false,
       );
     }
   }

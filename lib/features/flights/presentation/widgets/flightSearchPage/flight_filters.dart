@@ -1,18 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/flights/data/controllers/flight_controller.dart';
+
+enum SortOption { priceAsc, durationAsc, departureAsc }
 
 class FlightFilters extends StatefulWidget {
-  final FlightController controller;
-  final VoidCallback onFiltersChanged;
   final bool isReturnFlight;
+  final VoidCallback onFiltersChanged;
   final String? title;
+  final Map<String, double> Function()? getPriceRange;
+  final Map<String, double> Function()? getDurationRange;
+  final List<String> Function()? getAvailableAirlines;
+  final Function({
+    double? minPrice,
+    double? maxPrice,
+    double? minDuration,
+    double? maxDuration,
+    bool? directFlightsOnly,
+    Set<String>? airlines,
+    SortOption? sortOption,
+  })?
+  applyFilters;
+  final VoidCallback? clearFilters;
 
   const FlightFilters({
     super.key,
-    required this.controller,
-    required this.onFiltersChanged,
     this.isReturnFlight = false,
+    required this.onFiltersChanged,
     this.title,
+    this.getPriceRange,
+    this.getDurationRange,
+    this.getAvailableAirlines,
+    this.applyFilters,
+    this.clearFilters,
   });
 
   @override
@@ -30,8 +48,6 @@ class _FlightFiltersState extends State<FlightFilters>
   bool _directFlightsOnly = false;
   SortOption _selectedSort = SortOption.priceAsc;
   final Set<String> _selectedAirlines = {};
-  TimeOfDay? _minDepartureTime;
-  TimeOfDay? _maxDepartureTime;
 
   @override
   void initState() {
@@ -48,19 +64,16 @@ class _FlightFiltersState extends State<FlightFilters>
   }
 
   void _initializeFilters() {
-    final priceRange = widget.controller.getPriceRange(
-      isReturnFlight: widget.isReturnFlight,
-    );
-    final durationRange = widget.controller.getDurationRange(
-      isReturnFlight: widget.isReturnFlight,
-    );
+    final priceRange = widget.getPriceRange?.call();
+    final durationRange = widget.getDurationRange?.call();
 
     setState(() {
-      _priceRange = RangeValues(priceRange['min']!, priceRange['max']!);
-      _durationRange = RangeValues(
-        durationRange['min']!,
-        durationRange['max']!,
-      );
+      _priceRange = priceRange != null
+          ? RangeValues(priceRange['min']!, priceRange['max']!)
+          : null;
+      _durationRange = durationRange != null
+          ? RangeValues(durationRange['min']!, durationRange['max']!)
+          : null;
     });
   }
 
@@ -83,17 +96,14 @@ class _FlightFiltersState extends State<FlightFilters>
   }
 
   void _applyFilters() {
-    widget.controller.applyFilters(
+    widget.applyFilters?.call(
       minPrice: _priceRange?.start,
       maxPrice: _priceRange?.end,
       minDuration: _durationRange?.start,
       maxDuration: _durationRange?.end,
       directFlightsOnly: _directFlightsOnly,
       airlines: _selectedAirlines,
-      minDepartureTime: _minDepartureTime,
-      maxDepartureTime: _maxDepartureTime,
       sortOption: _selectedSort,
-      isReturnFlight: widget.isReturnFlight,
     );
     widget.onFiltersChanged();
   }
@@ -103,11 +113,8 @@ class _FlightFiltersState extends State<FlightFilters>
       _directFlightsOnly = false;
       _selectedSort = SortOption.priceAsc;
       _selectedAirlines.clear();
-      _minDepartureTime = null;
-      _maxDepartureTime = null;
     });
-    _initializeFilters();
-    widget.controller.clearFilters(isReturnFlight: widget.isReturnFlight);
+    widget.clearFilters?.call();
     widget.onFiltersChanged();
   }
 
@@ -117,29 +124,17 @@ class _FlightFiltersState extends State<FlightFilters>
       return const SizedBox.shrink();
     }
 
-    final hasActiveFilters =
-        _directFlightsOnly ||
-        _selectedAirlines.isNotEmpty ||
-        _minDepartureTime != null ||
-        _maxDepartureTime != null;
+    final hasActiveFilters = _directFlightsOnly || _selectedAirlines.isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
       child: Column(
         children: [
-          // Header
           GestureDetector(
             onTap: _toggleExpansion,
             child: Container(
@@ -153,7 +148,10 @@ class _FlightFiltersState extends State<FlightFilters>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    widget.title ?? 'Filtros y ordenamiento',
+                    widget.title ??
+                        (widget.isReturnFlight
+                            ? 'Filtros vuelos de regreso'
+                            : 'Filtros y ordenamiento'),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -192,8 +190,6 @@ class _FlightFiltersState extends State<FlightFilters>
               ),
             ),
           ),
-
-          // Filtros expandibles
           AnimatedBuilder(
             animation: _expandAnimation,
             builder: (context, child) {
@@ -213,22 +209,14 @@ class _FlightFiltersState extends State<FlightFilters>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Ordenamiento rápido
                   _buildQuickSortButtons(),
                   const SizedBox(height: 20),
-
-                  // Rango de precios
                   _buildPriceRangeSection(),
                   const SizedBox(height: 20),
-
-                  // Duración
                   _buildDurationRangeSection(),
                   const SizedBox(height: 20),
-
-                  // Filtros adicionales
                   _buildAdditionalFilters(),
                   const SizedBox(height: 20),
-
                   Row(
                     children: [
                       Expanded(
@@ -295,7 +283,7 @@ class _FlightFiltersState extends State<FlightFilters>
         });
       },
       selectedColor: (widget.isReturnFlight ? Colors.orange : Colors.blue)
-          .withValues(alpha: 0.2),
+          .withAlpha(50),
       checkmarkColor: widget.isReturnFlight ? Colors.orange : Colors.blue,
     );
   }
@@ -305,7 +293,7 @@ class _FlightFiltersState extends State<FlightFilters>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Precio: \$${_priceRange!.start.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} - \$${_priceRange!.end.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+          'Precio: \$${_priceRange!.start.toInt()} - \$${_priceRange!.end.toInt()}',
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
         RangeSlider(
@@ -351,7 +339,6 @@ class _FlightFiltersState extends State<FlightFilters>
   Widget _buildAdditionalFilters() {
     return Column(
       children: [
-        // Solo vuelos directos
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -372,19 +359,14 @@ class _FlightFiltersState extends State<FlightFilters>
             ),
           ],
         ),
-
         const SizedBox(height: 16),
-
-        // Aerolíneas
         _buildAirlinesSection(),
       ],
     );
   }
 
   Widget _buildAirlinesSection() {
-    final airlines = widget.controller.getAvailableAirlines(
-      isReturnFlight: widget.isReturnFlight,
-    );
+    final airlines = widget.getAvailableAirlines?.call() ?? [];
 
     if (airlines.isEmpty) return const SizedBox.shrink();
 
@@ -414,7 +396,7 @@ class _FlightFiltersState extends State<FlightFilters>
               },
               selectedColor:
                   (widget.isReturnFlight ? Colors.orange : Colors.blue)
-                      .withValues(alpha: 0.2),
+                      .withAlpha(50),
               checkmarkColor: widget.isReturnFlight
                   ? Colors.orange
                   : Colors.blue,

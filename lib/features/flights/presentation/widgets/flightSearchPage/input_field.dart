@@ -46,6 +46,7 @@ class InputField extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     label,
@@ -61,6 +62,7 @@ class InputField extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: enabled ? Colors.black : Colors.grey[400],
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

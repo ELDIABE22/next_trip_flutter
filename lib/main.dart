@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:next_trip/core/dependency_injection.dart';
 import 'package:next_trip/features/auth/application/bloc/auth_bloc.dart';
+import 'package:next_trip/features/flights/application/bloc/flight_bloc.dart';
 import 'package:next_trip/routes/app_pages.dart';
 import 'package:next_trip/routes/app_routes.dart';
 import 'firebase_options.dart';
@@ -27,8 +28,11 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => Get.find<AuthBloc>(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<AuthBloc>(create: (_) => Get.find<AuthBloc>()),
+        BlocProvider<FlightBloc>(create: (_) => Get.find<FlightBloc>()),
+      ],
       child: MaterialApp(
         title: 'NexTrip',
         debugShowCheckedModeBanner: false,

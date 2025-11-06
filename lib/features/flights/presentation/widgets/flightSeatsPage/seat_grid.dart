@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:next_trip/features/flights/data/models/seat_model.dart';
+import 'package:next_trip/features/flights/domain/entities/seat.dart';
+import 'package:next_trip/features/flights/infrastructure/models/seat_model.dart';
 
 class SeatGrid extends StatefulWidget {
   final String flightId;
@@ -17,7 +18,8 @@ class SeatGrid extends StatefulWidget {
 }
 
 class _SeatGridState extends State<SeatGrid> {
-  List<Seat> seats = [];
+  List<SeatModel> seats = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -26,16 +28,37 @@ class _SeatGridState extends State<SeatGrid> {
   }
 
   Future<void> _loadSeats() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection("flights")
-        .doc(widget.flightId)
-        .collection("seats")
-        .get();
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection("flights")
+          .doc(widget.flightId)
+          .collection("seats")
+          .get();
 
-    if (snapshot.docs.isNotEmpty) {
+      if (snapshot.docs.isNotEmpty) {
+        setState(() {
+          seats = snapshot.docs
+              .map((doc) => SeatModel.fromMap(doc.id, doc.data()))
+              .toList();
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
-        seats = snapshot.docs.map((doc) => Seat.fromMap(doc.data())).toList();
+        isLoading = false;
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar asientos: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -52,17 +75,33 @@ class _SeatGridState extends State<SeatGrid> {
               'Solo puedes seleccionar hasta 5 asientos por reserva',
             ),
             duration: Duration(seconds: 2),
+            backgroundColor: Colors.orange,
           ),
         );
         return;
       }
-
       setState(() {
-        seat.status = SeatStatus.selected;
+        int index = seats.indexWhere((s) => s.id == seat.id);
+        if (index != -1) {
+          seats[index] = SeatModel(
+            id: seat.id,
+            row: seat.row,
+            column: seat.column,
+            status: SeatStatus.selected,
+          );
+        }
       });
     } else if (seat.status == SeatStatus.selected) {
       setState(() {
-        seat.status = SeatStatus.available;
+        int index = seats.indexWhere((s) => s.id == seat.id);
+        if (index != -1) {
+          seats[index] = SeatModel(
+            id: seat.id,
+            row: seat.row,
+            column: seat.column,
+            status: SeatStatus.available,
+          );
+        }
       });
     }
 
@@ -73,8 +112,33 @@ class _SeatGridState extends State<SeatGrid> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     if (seats.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return Container(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Icon(
+              Icons.airline_seat_recline_normal,
+              size: 48,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay asientos disponibles',
+              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            ),
+          ],
+        ),
+      );
     }
 
     final groupedSeats = <int, List<Seat>>{};
@@ -90,7 +154,7 @@ class _SeatGridState extends State<SeatGrid> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withAlpha(25),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -119,7 +183,6 @@ class _SeatGridState extends State<SeatGrid> {
             ],
           ),
           const SizedBox(height: 15),
-
           ...groupedSeats.entries.map((entry) {
             int row = entry.key;
             List<Seat> rowSeats = entry.value;
@@ -128,7 +191,6 @@ class _SeatGridState extends State<SeatGrid> {
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: [
-                  // Número de fila
                   SizedBox(
                     width: 40,
                     child: Text(
@@ -140,8 +202,6 @@ class _SeatGridState extends State<SeatGrid> {
                       ),
                     ),
                   ),
-
-                  // Asientos
                   Expanded(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,

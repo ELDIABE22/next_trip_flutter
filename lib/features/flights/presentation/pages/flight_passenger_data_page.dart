@@ -1,9 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
-import 'package:next_trip/features/flights/data/models/flight_model.dart';
-import 'package:next_trip/features/flights/data/models/passenger_model.dart';
-import 'package:next_trip/features/flights/data/models/seat_model.dart';
+import 'package:next_trip/features/auth/domain/entities/user.dart' as app_user;
+import 'package:next_trip/features/flights/domain/entities/flight.dart';
+import 'package:next_trip/features/flights/domain/entities/passenger.dart';
+import 'package:next_trip/features/flights/domain/entities/seat.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_booking_payment.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightPassengerDataPage/collapsible_passenger_box.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightPassengerDataPage/confirm_passenger_data_button.dart';
@@ -38,9 +42,11 @@ class FlightPassengerDataPage extends StatefulWidget {
 }
 
 class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
-  final List<String> passengers =
-      []; // lista de tipos: "Adulto", "Niño", "Bebé"
+  final List<String> passengers = [];
   final List<Passenger> passengersData = [];
+  bool _isLoadingUserData = false;
+  bool _hasUsedAutoFill = false;
+  int _rebuildKey = 0;
 
   void _addPassenger(String type) {
     if (passengers.length >= widget.seatCount) {
@@ -123,6 +129,165 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
     }
   }
 
+  Future<app_user.User?> _getUserData() async {
+    try {
+      final currentUser = auth.FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return null;
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+
+      if (!doc.exists) return null;
+
+      final data = doc.data()!;
+
+      DateTime birthDate = DateTime.now();
+      if (data['birthDate'] != null) {
+        if (data['birthDate'] is Timestamp) {
+          birthDate = (data['birthDate'] as Timestamp).toDate();
+        } else if (data['birthDate'] is String) {
+          try {
+            final parts = (data['birthDate'] as String).split('/');
+            if (parts.length == 3) {
+              birthDate = DateTime(
+                int.parse(parts[2]),
+                int.parse(parts[1]),
+                int.parse(parts[0]),
+              );
+            } else {
+              birthDate = DateTime.parse(data['birthDate'] as String);
+            }
+          } catch (e) {
+            debugPrint('Error parseando birthDate: $e');
+            birthDate = DateTime.now();
+          }
+        }
+      }
+
+      DateTime createdAt = DateTime.now();
+      if (data['createdAt'] != null) {
+        if (data['createdAt'] is Timestamp) {
+          createdAt = (data['createdAt'] as Timestamp).toDate();
+        } else if (data['createdAt'] is String) {
+          try {
+            createdAt = DateTime.parse(data['createdAt'] as String);
+          } catch (e) {
+            debugPrint('Error parseando createdAt: $e');
+            createdAt = DateTime.now();
+          }
+        }
+      }
+
+      return app_user.User(
+        id: currentUser.uid,
+        fullName: data['fullName'] ?? '',
+        email: data['email'] ?? currentUser.email ?? '',
+        phoneNumber: data['phoneNumber'] ?? '',
+        cc: data['cc'] ?? '',
+        gender: data['gender'] ?? '',
+        birthDate: birthDate,
+        createdAt: createdAt,
+      );
+    } catch (e) {
+      debugPrint('Error al obtener datos del usuario: $e');
+      return null;
+    }
+  }
+
+  Future<void> _autoFillUserData() async {
+    if (_hasUsedAutoFill) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ya has usado tus datos'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoadingUserData = true;
+    });
+
+    try {
+      final user = await _getUserData();
+
+      if (user == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No se pudieron cargar tus datos'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      setState(() {
+        if (passengers.isEmpty) {
+          passengers.add("Adulto");
+        }
+
+        _hasUsedAutoFill = true;
+
+        final userData = {
+          'fullName': user.fullName,
+          'cc': user.cc,
+          'gender': user.gender,
+          'email': user.email,
+          'phone': user.phoneNumber,
+          'birthDate': DateFormat('dd/MM/yyyy').format(user.birthDate),
+        };
+
+        setState(() {
+          if (passengers.isEmpty) {
+            passengers.add("Adulto");
+          }
+
+          _updatePassenger(0, userData, PassengerType.adult);
+
+          _hasUsedAutoFill = true;
+
+          _rebuildKey++;
+        });
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Datos cargados correctamente'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar datos: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingUserData = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,20 +317,19 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Header informativo para ida y vuelta
                       if (widget.isRoundTrip) ...[
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [
-                                Colors.blue.withValues(alpha: 0.1),
-                                Colors.green.withValues(alpha: 0.1),
+                                Colors.blue.withAlpha(25),
+                                Colors.green.withAlpha(25),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.blue.withValues(alpha: 0.3),
+                              color: Colors.blue.withAlpha(75),
                             ),
                           ),
                           child: Column(
@@ -191,22 +355,23 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
                                   const Icon(Icons.flight_takeoff, size: 16),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Ida: ${widget.outboundFlight?.routeTitle ?? widget.flight.routeTitle}',
+                                    'Ida: ${widget.outboundFlight?.originCity ?? widget.flight.originCity} → ${widget.outboundFlight?.destinationCity ?? widget.flight.destinationCity}',
                                     style: const TextStyle(fontSize: 12),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  const Icon(Icons.flight_land, size: 16),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Regreso: ${widget.returnFlight?.routeTitle ?? 'No especificado'}',
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ],
-                              ),
+                              if (widget.returnFlight != null)
+                                Row(
+                                  children: [
+                                    const Icon(Icons.flight_land, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Regreso: ${widget.returnFlight!.originCity} → ${widget.returnFlight!.destinationCity}',
+                                      style: const TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
                               const SizedBox(height: 8),
                               Row(
                                 children: [
@@ -227,9 +392,11 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
                         const SizedBox(height: 16),
                       ],
 
-                      // Lista de pasajeros
                       for (var i = 0; i < passengers.length; i++)
                         CollapsiblePassengerBox(
+                          key: ValueKey(
+                            'passenger_${i}_$_rebuildKey',
+                          ), // MODIFICADO
                           title: '${passengers[i]} ${i + 1}',
                           icon: passengers[i] == "Bebé"
                               ? Icons.child_care
@@ -240,53 +407,60 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
                             data,
                             _parsePassengerType(passengers[i]),
                           ),
+                          initialData: i < passengersData.length
+                              ? {
+                                  'fullName': passengersData[i].fullName,
+                                  'cc': passengersData[i].cc,
+                                  'gender': passengersData[i].gender,
+                                  'email': passengersData[i].email,
+                                  'phone': passengersData[i].phone,
+                                  'birthDate': DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).format(passengersData[i].birthDate),
+                                }
+                              : null,
                         ),
 
                       const Spacer(),
 
-                      // Información de progreso
-                      if (passengers.isNotEmpty)
+                      if (!_hasUsedAutoFill &&
+                          // ignore: prefer_is_empty
+                          (passengers.isEmpty || passengers.length >= 1))
                         Container(
-                          margin: const EdgeInsets.symmetric(vertical: 16),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Colors.green.withValues(alpha: 0.3),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoadingUserData
+                                ? null
+                                : _autoFillUserData,
+                            icon: _isLoadingUserData
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.person_add, size: 20),
+                            label: Text(
+                              _isLoadingUserData
+                                  ? 'Cargando...'
+                                  : 'Usar mis datos',
                             ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                passengers.length == widget.seatCount
-                                    ? Icons.check_circle
-                                    : Icons.info_outline,
-                                color: passengers.length == widget.seatCount
-                                    ? Colors.green
-                                    : Colors.orange,
-                                size: 20,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 14,
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  passengers.length == widget.seatCount
-                                      ? 'Todos los pasajeros agregados. Completa los datos para continuar.'
-                                      : 'Faltan ${widget.seatCount - passengers.length} pasajero(s) por agregar',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: passengers.length == widget.seatCount
-                                        ? Colors.green[700]
-                                        : Colors.orange[700],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            ],
+                            ),
                           ),
                         ),
 
-                      // Botones para agregar pasajeros
                       if (passengers.length < widget.seatCount)
                         Wrap(
                           spacing: 10,
@@ -308,8 +482,6 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
                 ),
               ),
             ),
-
-            // Botón de confirmación
             Positioned(
               bottom: 20,
               left: 0,
