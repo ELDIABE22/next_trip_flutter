@@ -3,10 +3,11 @@ import 'package:intl/intl.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/utils/helpers.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
-import 'package:next_trip/features/bookings/data/models/flight_booking_model.dart';
+import 'package:next_trip/features/bookings/domain/entities/flight_booking.dart';
+import 'package:next_trip/features/bookings/infrastructure/models/flight_booking_model.dart';
 
 class BookingDetailsFlight extends StatelessWidget {
-  final FlightBooking booking;
+  final FlightBookingModel booking;
 
   const BookingDetailsFlight({super.key, required this.booking});
 

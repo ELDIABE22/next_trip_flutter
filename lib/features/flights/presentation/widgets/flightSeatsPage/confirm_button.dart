@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/features/flights/domain/entities/flight.dart';
-import 'package:next_trip/features/flights/domain/entities/seat.dart';
+import 'package:next_trip/features/flights/infrastructure/models/seat_model.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_passenger_data_page.dart';
 
 class ConfirmButton extends StatelessWidget {
-  final List<Seat> selectedSeats;
+  final List<SeatModel> selectedSeats;
   final Flight flight;
   final bool isRoundTrip;
-  final List<Seat>? outboundSeats;
-  final List<Seat>? returnSeats;
+  final List<SeatModel>? outboundSeats;
+  final List<SeatModel>? returnSeats;
   final Flight? outboundFlight;
   final Flight? returnFlight;
 

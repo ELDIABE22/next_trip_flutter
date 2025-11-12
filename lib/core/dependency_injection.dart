@@ -17,12 +17,21 @@ import 'package:next_trip/features/auth/infrastructure/repositories/auth_reposit
 // Flight imports
 import 'package:next_trip/features/flights/application/bloc/flight_bloc.dart';
 import 'package:next_trip/features/flights/domain/repositories/flight_repository.dart';
-import 'package:next_trip/features/flights/domain/usecases/create_booking_usecase.dart';
-import 'package:next_trip/features/flights/domain/usecases/create_round_trip_booking_usecase.dart';
 import 'package:next_trip/features/flights/domain/usecases/search_flights_usecase.dart';
 import 'package:next_trip/features/flights/domain/usecases/search_return_flights_usecase.dart';
 import 'package:next_trip/features/flights/infrastructure/datasources/flight_remote_datasource.dart';
 import 'package:next_trip/features/flights/infrastructure/repositories/flight_repository_impl.dart';
+
+// Flight Booking imports
+import 'package:next_trip/features/bookings/domain/usecases/create_booking_usecase.dart';
+import 'package:next_trip/features/bookings/domain/usecases/create_round_trip_booking_usecase.dart';
+import 'package:next_trip/features/bookings/domain/repositories/flight_booking_repository.dart';
+import 'package:next_trip/features/bookings/infrastructure/datasources/flight_booking_remote_datasource.dart';
+import 'package:next_trip/features/bookings/infrastructure/repositories/flight_booking_repository_impl.dart';
+import 'package:next_trip/features/bookings/domain/usecases/cancel_booking_usecase.dart';
+import 'package:next_trip/features/bookings/domain/usecases/get_user_bookings_usecase.dart';
+import 'package:next_trip/features/bookings/domain/usecases/get_user_round_trip_bookings_usecase.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking_bloc.dart';
 
 void setupDependencies() {
   // Firebase instances
@@ -82,16 +91,51 @@ void setupDependencies() {
   // Use cases
   Get.lazyPut(() => SearchFlightsUseCase(Get.find<FlightRepository>()));
   Get.lazyPut(() => SearchReturnFlightsUseCase(Get.find<FlightRepository>()));
-  Get.lazyPut(() => CreateBookingUseCase(Get.find<FlightRepository>()));
-  Get.lazyPut(
-    () => CreateRoundTripBookingUseCase(Get.find<FlightRepository>()),
-  );
 
   // Bloc
   Get.put<FlightBloc>(
     FlightBloc(
       searchFlightsUseCase: Get.find<SearchFlightsUseCase>(),
       searchReturnFlightsUseCase: Get.find<SearchReturnFlightsUseCase>(),
+    ),
+    permanent: true,
+  );
+
+  // --- FLIGHT BOOKING  ---
+
+  // Data sources
+  Get.lazyPut<FlightBookingRemoteDataSource>(
+    () =>
+        FlightBookingRemoteDataSource(firestore: Get.find<FirebaseFirestore>()),
+  );
+
+  // Repositories
+  Get.lazyPut<FlightBookingRepository>(
+    () => FlightBookingRepositoryImpl(
+      remoteDataSource: Get.find<FlightBookingRemoteDataSource>(),
+    ),
+  );
+
+  // Use cases
+  Get.lazyPut(() => CancelBookingUseCase(Get.find<FlightBookingRepository>()));
+  Get.lazyPut(() => CreateBookingUseCase(Get.find<FlightBookingRepository>()));
+  Get.lazyPut(
+    () => CreateRoundTripBookingUseCase(Get.find<FlightBookingRepository>()),
+  );
+  Get.lazyPut(
+    () => GetUserBookingsUseCase(Get.find<FlightBookingRepository>()),
+  );
+  Get.lazyPut(
+    () => GetUserRoundTripBookingsUseCase(Get.find<FlightBookingRepository>()),
+  );
+
+  // Bloc
+  Get.put<FlightBookingBloc>(
+    FlightBookingBloc(
+      getUserRoundTripBookingsUseCase:
+          Get.find<GetUserRoundTripBookingsUseCase>(),
+      getUserBookingsUseCase: Get.find<GetUserBookingsUseCase>(),
+      cancelBookingUsecase: Get.find<CancelBookingUseCase>(),
       createBookingUseCase: Get.find<CreateBookingUseCase>(),
       createRoundTripBookingUseCase: Get.find<CreateRoundTripBookingUseCase>(),
     ),

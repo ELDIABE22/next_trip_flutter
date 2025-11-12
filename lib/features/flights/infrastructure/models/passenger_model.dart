@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:next_trip/core/utils/helpers.dart';
 import '../../domain/entities/passenger.dart';
 
 class PassengerModel extends Passenger {
@@ -33,7 +34,7 @@ class PassengerModel extends Passenger {
       gender: map['gender'],
       email: map['email'],
       phone: map['phone'],
-      birthDate: (map['birthDate'] as Timestamp).toDate(),
+      birthDate: parseDateTime(map['birthDate']),
       type: PassengerType.values.firstWhere(
         (e) => e.name == map['type'],
         orElse: () => PassengerType.adult,
@@ -54,4 +55,3 @@ class PassengerModel extends Passenger {
     );
   }
 }
-

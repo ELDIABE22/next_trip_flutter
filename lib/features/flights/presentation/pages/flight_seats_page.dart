@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/features/flights/domain/entities/flight.dart';
-import 'package:next_trip/features/flights/domain/entities/seat.dart';
+import 'package:next_trip/features/flights/infrastructure/models/seat_model.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSearchPage/flight_card.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSeatsPage/confirm_button.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightSeatsPage/seat_grid.dart';
@@ -26,8 +26,8 @@ class FlightSeatsPage extends StatefulWidget {
 
 class _FlightSeatsPageState extends State<FlightSeatsPage>
     with SingleTickerProviderStateMixin {
-  List<Seat> selectedOutboundSeats = [];
-  List<Seat> selectedReturnSeats = [];
+  List<SeatModel> selectedOutboundSeats = [];
+  List<SeatModel> selectedReturnSeats = [];
   late TabController _tabController;
   int _currentTab = 0;
 

@@ -5,7 +5,7 @@ import 'package:next_trip/features/flights/infrastructure/models/seat_model.dart
 
 class SeatGrid extends StatefulWidget {
   final String flightId;
-  final void Function(List<Seat>) onSelectionChanged;
+  final void Function(List<SeatModel>) onSelectionChanged;
 
   const SeatGrid({
     super.key,

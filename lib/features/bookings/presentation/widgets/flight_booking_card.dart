@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:next_trip/core/utils/helpers.dart';
-import 'package:next_trip/features/bookings/data/models/flight_booking_model.dart';
+import 'package:next_trip/features/bookings/domain/entities/flight_booking.dart';
+import 'package:next_trip/features/bookings/infrastructure/models/flight_booking_model.dart';
 import 'package:next_trip/features/bookings/presentation/page/booking_details_flight.dart';
 
 class FlightBookingCard extends StatelessWidget {
-  final FlightBooking booking;
+  final FlightBookingModel booking;
 
   const FlightBookingCard({super.key, required this.booking});
 

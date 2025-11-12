@@ -1,46 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:next_trip/features/flights/data/models/flight_model.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
-import 'package:next_trip/features/flights/data/models/passenger_model.dart';
-import 'package:next_trip/features/flights/data/models/seat_model.dart';
+import 'package:next_trip/core/utils/helpers.dart';
+import 'package:next_trip/features/bookings/domain/entities/flight_booking.dart';
+import 'package:next_trip/features/flights/infrastructure/models/flight_model.dart';
+import 'package:next_trip/features/flights/infrastructure/models/passenger_model.dart';
+import 'package:next_trip/features/flights/infrastructure/models/seat_model.dart';
 
-enum BookingStatus { pending, cancelled, completed }
-
-enum TripType { oneWay, outbound, back }
-
-class FlightBooking {
-  final String bookingId;
-  final String userId;
-  final Flight flight;
-  final int totalPrice;
-  final List<Passenger> passengers;
-  final List<Seat> seats;
-  final BookingStatus status;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  final bool? isRoundTrip;
-  final TripType? tripType;
-  final String? relatedBookingId;
-  final int? totalRoundTripPrice;
-
-  FlightBooking({
-    required this.bookingId,
-    required this.userId,
-    required this.flight,
-    required this.totalPrice,
-    this.status = BookingStatus.pending,
-    this.passengers = const [],
-    this.seats = const [],
-    this.isRoundTrip,
-    this.tripType,
-    this.relatedBookingId,
-    this.totalRoundTripPrice,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  }) : createdAt = createdAt ?? DateTime.now(),
-       updatedAt = updatedAt ?? DateTime.now();
+class FlightBookingModel extends FlightBooking {
+  FlightBookingModel({
+    required super.bookingId,
+    required super.userId,
+    required super.flight,
+    required super.totalPrice,
+    super.status,
+    super.passengers,
+    super.seats,
+    super.isRoundTrip,
+    super.tripType,
+    super.relatedBookingId,
+    super.totalRoundTripPrice,
+    super.createdAt,
+    super.updatedAt,
+  });
 
   String get totalPriceLabel {
     final formatter = NumberFormat("#,###", "es_CO");
@@ -79,17 +61,17 @@ class FlightBooking {
     };
   }
 
-  factory FlightBooking.fromMap(
+  factory FlightBookingModel.fromMap(
     String id,
     Map<String, dynamic> map, {
-    List<Passenger>? passengers,
-    List<Seat>? seats,
+    List<PassengerModel>? passengers,
+    List<SeatModel>? seats,
   }) {
     try {
-      return FlightBooking(
+      return FlightBookingModel(
         bookingId: id,
         userId: map['userId'] as String? ?? '',
-        flight: Flight.fromMap(
+        flight: FlightModel.fromMap(
           map['flightId'] as String? ?? '',
           map['flight_details'] as Map<String, dynamic>,
         ),
@@ -100,8 +82,6 @@ class FlightBooking {
         ),
         passengers: passengers ?? [],
         seats: seats ?? [],
-        createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-        updatedAt: (map['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
         isRoundTrip: map['isRoundTrip'] as bool?,
         tripType: map['tripType'] != null
             ? TripType.values.firstWhere(
@@ -111,10 +91,30 @@ class FlightBooking {
             : null,
         relatedBookingId: map['relatedBookingId'] as String?,
         totalRoundTripPrice: (map['totalRoundTripPrice'] as num?)?.toInt(),
+        createdAt: parseDateTime(map['createdAt']),
+        updatedAt: parseDateTime(map['updatedAt']),
       );
     } catch (e) {
-      debugPrint('Error creating FlightBooking from map: $e');
+      debugPrint('Error creating FlightBookingModel from map: $e');
       rethrow;
     }
+  }
+
+  factory FlightBookingModel.fromEntity(FlightBooking entity) {
+    return FlightBookingModel(
+      bookingId: entity.bookingId,
+      userId: entity.userId,
+      flight: entity.flight,
+      totalPrice: entity.totalPrice,
+      passengers: entity.passengers,
+      seats: entity.seats,
+      status: entity.status,
+      createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+      isRoundTrip: entity.isRoundTrip,
+      tripType: entity.tripType,
+      relatedBookingId: entity.relatedBookingId,
+      totalRoundTripPrice: entity.totalRoundTripPrice,
+    );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
 // return "dom. 01 de oct"
@@ -132,5 +133,17 @@ String getStatusTextFlightBooking(String status) {
       return 'Pendiente';
     default:
       return status;
+  }
+}
+
+DateTime parseDateTime(dynamic value) {
+  if (value == null) return DateTime.now();
+
+  if (value is Timestamp) {
+    return value.toDate();
+  } else if (value is String) {
+    return DateTime.tryParse(value) ?? DateTime.now();
+  } else {
+    return DateTime.now();
   }
 }

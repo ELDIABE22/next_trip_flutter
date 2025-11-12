@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:next_trip/core/utils/helpers.dart';
 import '../../domain/entities/flight.dart';
 
 class FlightModel extends Flight {
@@ -19,6 +20,15 @@ class FlightModel extends Flight {
     super.createdAt,
     super.updatedAt,
   });
+
+  /// Duración formateada como "1h 33m"
+  String get durationLabel {
+    final h = duration.inHours;
+    final m = duration.inMinutes.remainder(60);
+    if (h > 0 && m > 0) return '${h}h ${m}m';
+    if (h > 0) return '${h}h';
+    return '${m}m';
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -48,14 +58,18 @@ class FlightModel extends Flight {
       originIata: map['originIata'],
       destinationCity: map['destinationCity'],
       destinationIata: map['destinationIata'],
-      departureDateTime: (map['departureDateTime'] as Timestamp).toDate(),
-      arrivalDateTime: (map['arrivalDateTime'] as Timestamp).toDate(),
+      departureDateTime: parseDateTime(map['departureDateTime']),
+      arrivalDateTime: parseDateTime(map['arrivalDateTime']),
       isDirect: map['isDirect'] ?? true,
       duration: Duration(minutes: map['durationMinutes']),
       totalPriceCop: map['totalPriceCop'],
       availableSeats: map['availableSeats'],
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate(),
-      updatedAt: (map['updatedAt'] as Timestamp?)?.toDate(),
+      createdAt: map['createdAt'] != null
+          ? parseDateTime(map['createdAt'])
+          : null,
+      updatedAt: map['updatedAt'] != null
+          ? parseDateTime(map['updatedAt'])
+          : null,
     );
   }
 

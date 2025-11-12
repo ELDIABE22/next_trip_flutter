@@ -5,25 +5,26 @@ import 'package:intl/intl.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/utils/helpers.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
-import 'package:next_trip/features/flights/application/bloc/flight_bloc.dart';
-import 'package:next_trip/features/flights/application/bloc/flight_event.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking_bloc.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking_event.dart';
 import 'package:next_trip/features/flights/domain/entities/flight.dart';
 import 'package:next_trip/features/flights/domain/entities/passenger.dart';
-import 'package:next_trip/features/flights/domain/entities/seat.dart';
+import 'package:next_trip/features/flights/infrastructure/models/passenger_model.dart';
+import 'package:next_trip/features/flights/infrastructure/models/seat_model.dart';
 import 'package:next_trip/features/flights/presentation/pages/payment_success_screen.dart';
 
 class FlightBookingPayment extends StatefulWidget {
   final int passengerCount;
   final Flight flight;
   final String seatNumber;
-  final List<Passenger> passengers;
-  final List<Seat> selectedSeats;
+  final List<PassengerModel> passengers;
+  final List<SeatModel> selectedSeats;
   final List<String> seatNumbers;
   final bool isRoundTrip;
   final Flight? outboundFlight;
   final Flight? returnFlight;
-  final List<Seat>? outboundSeats;
-  final List<Seat>? returnSeats;
+  final List<SeatModel>? outboundSeats;
+  final List<SeatModel>? returnSeats;
 
   const FlightBookingPayment({
     super.key,
@@ -107,7 +108,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
           widget.returnFlight != null &&
           widget.outboundSeats != null &&
           widget.returnSeats != null) {
-        context.read<FlightBloc>().add(
+        context.read<FlightBookingBloc>().add(
           CreateRoundTripBookingRequested(
             userId: userId,
             outboundFlight: widget.outboundFlight!,
@@ -119,7 +120,7 @@ class _FlightBookingPaymentState extends State<FlightBookingPayment> {
           ),
         );
       } else {
-        context.read<FlightBloc>().add(
+        context.read<FlightBookingBloc>().add(
           CreateBookingRequested(
             userId: userId,
             flight: widget.flight,

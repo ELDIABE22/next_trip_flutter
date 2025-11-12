@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:next_trip/core/dependency_injection.dart';
 import 'package:next_trip/features/auth/application/bloc/auth_bloc.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking_bloc.dart';
 import 'package:next_trip/features/flights/application/bloc/flight_bloc.dart';
 import 'package:next_trip/routes/app_pages.dart';
 import 'package:next_trip/routes/app_routes.dart';
@@ -32,6 +33,9 @@ class MainApp extends StatelessWidget {
       providers: [
         BlocProvider<AuthBloc>(create: (_) => Get.find<AuthBloc>()),
         BlocProvider<FlightBloc>(create: (_) => Get.find<FlightBloc>()),
+        BlocProvider<FlightBookingBloc>(
+          create: (_) => Get.find<FlightBookingBloc>(),
+        ),
       ],
       child: MaterialApp(
         title: 'NexTrip',

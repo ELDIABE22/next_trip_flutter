@@ -7,7 +7,8 @@ import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/features/auth/domain/entities/user.dart' as app_user;
 import 'package:next_trip/features/flights/domain/entities/flight.dart';
 import 'package:next_trip/features/flights/domain/entities/passenger.dart';
-import 'package:next_trip/features/flights/domain/entities/seat.dart';
+import 'package:next_trip/features/flights/infrastructure/models/passenger_model.dart';
+import 'package:next_trip/features/flights/infrastructure/models/seat_model.dart';
 import 'package:next_trip/features/flights/presentation/pages/flight_booking_payment.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightPassengerDataPage/collapsible_passenger_box.dart';
 import 'package:next_trip/features/flights/presentation/widgets/flightPassengerDataPage/confirm_passenger_data_button.dart';
@@ -15,13 +16,13 @@ import 'package:next_trip/features/flights/presentation/widgets/flightPassengerD
 class FlightPassengerDataPage extends StatefulWidget {
   final int seatCount;
   final Flight flight;
-  final List<Seat> selectedSeats;
+  final List<SeatModel> selectedSeats;
   final String seatNumber;
   final bool isRoundTrip;
   final Flight? outboundFlight;
   final Flight? returnFlight;
-  final List<Seat>? outboundSeats;
-  final List<Seat>? returnSeats;
+  final List<SeatModel>? outboundSeats;
+  final List<SeatModel>? returnSeats;
 
   const FlightPassengerDataPage({
     super.key,
@@ -43,7 +44,7 @@ class FlightPassengerDataPage extends StatefulWidget {
 
 class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
   final List<String> passengers = [];
-  final List<Passenger> passengersData = [];
+  final List<PassengerModel> passengersData = [];
   bool _isLoadingUserData = false;
   bool _hasUsedAutoFill = false;
   int _rebuildKey = 0;
@@ -100,7 +101,7 @@ class _FlightPassengerDataPageState extends State<FlightPassengerDataPage> {
     Map<String, String> data,
     PassengerType type,
   ) {
-    final passenger = Passenger(
+    final passenger = PassengerModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       fullName: data['fullName'] ?? '',
       cc: data['cc'] ?? '',
