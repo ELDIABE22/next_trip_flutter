@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:next_trip/features/flights/domain/entities/flight.dart';
-import '../models/flight_model.dart';
+import 'package:next_trip/features/flights/infrastructure/models/flight_model.dart';
 
 abstract class FlightRemoteDataSource {
   Future<List<Flight>> searchFlights({

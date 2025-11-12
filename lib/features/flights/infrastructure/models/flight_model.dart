@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:next_trip/core/utils/helpers.dart';
-import '../../domain/entities/flight.dart';
+import 'package:next_trip/features/flights/domain/entities/flight.dart';
 
 class FlightModel extends Flight {
   FlightModel({

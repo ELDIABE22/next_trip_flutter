@@ -2,12 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:next_trip/core/utils/form_validators.dart';
 import 'package:next_trip/core/widgets/input.dart';
-import 'package:next_trip/features/hotels/data/models/hotel_model.dart';
 import 'package:next_trip/features/bookings/data/controllers/hotel_booking_controller.dart';
+import 'package:next_trip/features/hotels/infrastructure/models/hotel_model.dart';
 import 'package:next_trip/features/hotels/presentation/page/payment_success_page.dart';
 
 class BookingFormDialog extends StatefulWidget {
-  final Hotel hotel;
+  final HotelModel hotel;
   final HotelBookingController bookingController;
 
   const BookingFormDialog({

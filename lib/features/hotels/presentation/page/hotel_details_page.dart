@@ -1,43 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/core/widgets/bottom_reserve_panel.dart';
 import 'package:next_trip/features/bookings/data/controllers/hotel_booking_controller.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/booking_form_dialog.dart';
-import 'package:next_trip/features/hotels/data/controllers/hotel_controller.dart';
-import 'package:next_trip/features/hotels/data/models/hotel_model.dart';
+import 'package:next_trip/features/hotels/application/bloc/hotel_bloc.dart';
+import 'package:next_trip/features/hotels/application/bloc/hotel_event.dart';
+import 'package:next_trip/features/hotels/application/bloc/hotel_state.dart';
+import 'package:next_trip/features/hotels/infrastructure/models/hotel_model.dart';
 import 'package:next_trip/features/hotels/presentation/widgets/hotelSearchPage/hotel_attribute_card.dart';
 
 class HotelDetailsPage extends StatefulWidget {
-  final Hotel? hotel;
-  final String? hotelId;
+  final HotelModel hotel;
 
-  const HotelDetailsPage({super.key, this.hotel, this.hotelId});
+  const HotelDetailsPage({super.key, required this.hotel});
 
   @override
   State<HotelDetailsPage> createState() => _HotelDetailsPageState();
 }
 
 class _HotelDetailsPageState extends State<HotelDetailsPage> {
-  late final HotelController _hotelController;
   late final HotelBookingController _bookingController;
-  Hotel? _currentHotel;
 
   @override
   void initState() {
     super.initState();
     _setupControllers();
-    _initializeHotel();
+    context.read<HotelBloc>().add(GetHotelByIdRequested(id: widget.hotel.id));
   }
 
   void _setupControllers() {
-    _hotelController = HotelController(
-      onStateChanged: () {
-        if (mounted) setState(() {});
-      },
-    );
-
     _bookingController = HotelBookingController(
       onStateChanged: () {
         if (mounted) setState(() {});
@@ -45,24 +39,10 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     );
   }
 
-  void _initializeHotel() {
-    if (widget.hotel != null) {
-      _currentHotel = widget.hotel;
-      _hotelController.selectHotel(widget.hotel!);
-    } else if (widget.hotelId != null) {
-      _hotelController.loadHotelById(widget.hotelId!);
-    }
-  }
-
   @override
   void dispose() {
-    _hotelController.dispose();
     _bookingController.dispose();
     super.dispose();
-  }
-
-  Hotel? get _displayHotel {
-    return _currentHotel ?? _hotelController.selectedHotel ?? widget.hotel;
   }
 
   bool get _isUserLoggedIn {
@@ -73,148 +53,150 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: Appbar(isTransparent: true, iconColor: Colors.white),
+      appBar: Appbar(isTransparent: true, iconColor: Colors.black),
       body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
-    final hotel = _displayHotel;
-
-    // Loading state
-    if (_hotelController.isLoading && hotel == null) {
-      return Container(
-        decoration: AppConstantsColors.radialBackground,
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(color: Colors.white),
-              SizedBox(height: 16),
-              Text(
-                'Cargando detalles del hotel...',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Error state
-    if (hotel == null && _hotelController.hasError) {
-      return Container(
-        decoration: AppConstantsColors.radialBackground,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.white),
-                const SizedBox(height: 16),
-                const Text(
-                  'Error al cargar el hotel',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+    return BlocBuilder<HotelBloc, HotelState>(
+      builder: (context, state) {
+        if (state is HotelLoading) {
+          return Container(
+            decoration: AppConstantsColors.radialBackground,
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: Colors.black),
+                  SizedBox(height: 16),
+                  Text(
+                    'Cargando detalles del hotel...',
+                    style: TextStyle(color: Colors.black, fontSize: 16),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _hotelController.errorMessage ?? 'Error desconocido',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[300]),
-                ),
-                const SizedBox(height: 16),
-                Row(
+                ],
+              ),
+            ),
+          );
+        } else if (state is HotelError) {
+          return Container(
+            decoration: AppConstantsColors.radialBackground,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (widget.hotelId != null)
-                      ElevatedButton(
-                        onPressed: () {
-                          _hotelController.clearError();
-                          _hotelController.loadHotelById(widget.hotelId!);
-                        },
-                        child: const Text('Reintentar'),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Error al cargar el hotel',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                    if (widget.hotelId != null) const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Volver'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (widget.hotel.id.isNotEmpty)
+                          ElevatedButton(
+                            onPressed: () {
+                              context.read<HotelBloc>().add(
+                                GetHotelByIdRequested(id: widget.hotel.id),
+                              );
+                            },
+                            child: const Text('Reintentar'),
+                          ),
+                        if (widget.hotel.id.isNotEmpty)
+                          const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Volver'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      );
-    }
-
-    // No hotel state
-    if (hotel == null) {
-      return Container(
-        decoration: AppConstantsColors.radialBackground,
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.hotel_outlined, size: 64, color: Colors.white),
-              SizedBox(height: 16),
-              Text(
-                'Hotel no encontrado',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+          );
+        } else if (state is HotelLoaded) {
+          if (state.hotels == null) {
+            return Container(
+              decoration: AppConstantsColors.radialBackground,
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.hotel_outlined, size: 64, color: Colors.white),
+                    SizedBox(height: 16),
+                    Text(
+                      'Hotel no encontrado',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      );
-    }
+            );
+          }
 
-    return Stack(
-      children: [
-        SingleChildScrollView(
-          child: Container(
-            decoration: AppConstantsColors.radialBackground,
-            child: Column(
-              children: [
-                // Image
-                _buildHotelImage(hotel),
-
-                // Content
-                Padding(
-                  padding: const EdgeInsets.all(20),
+          return Stack(
+            children: [
+              SingleChildScrollView(
+                child: Container(
+                  decoration: AppConstantsColors.radialBackground,
                   child: Column(
                     children: [
-                      _buildHotelDetails(hotel),
-                      const SizedBox(height: 20),
-                      _buildHotelAttributes(hotel),
-                      const SizedBox(height: 20),
-                      _buildBookingSection(hotel),
-                      _buildAboutSection(hotel),
-                      const SizedBox(height: 80),
+                      // Image
+                      _buildHotelImage(state.hotels),
+
+                      // Content
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            _buildHotelDetails(state.hotels),
+                            const SizedBox(height: 20),
+                            _buildHotelAttributes(state.hotels),
+                            const SizedBox(height: 20),
+                            _buildBookingSection(state.hotels),
+                            _buildAboutSection(state.hotels),
+                            const SizedBox(height: 80),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              ),
 
-        _buildBottomReservePanel(hotel),
-      ],
+              _buildBottomReservePanel(state.hotels),
+            ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 
-  Widget _buildBookingSection(Hotel hotel) {
+  Widget _buildBookingSection(HotelModel? hotel) {
+    if (hotel == null) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: const BoxDecoration(
@@ -393,7 +375,11 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     );
   }
 
-  Widget _buildBottomReservePanel(Hotel hotel) {
+  Widget _buildBottomReservePanel(HotelModel? hotel) {
+    if (hotel == null) {
+      return const SizedBox.shrink();
+    }
+
     return BottomReservePanel(
       totalPrice: _bookingController.hasValidDateRange
           ? _bookingController.getFormattedTotalPrice(hotel)
@@ -406,7 +392,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     );
   }
 
-  Future<void> _handleReservation(Hotel hotel) async {
+  Future<void> _handleReservation(HotelModel hotel) async {
     if (!_isUserLoggedIn) {
       _showAuthenticationRequired();
       return;
@@ -521,48 +507,60 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     );
   }
 
-  Widget _buildHotelImage(Hotel hotel) {
-    return SizedBox(
-      child: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+  Widget _buildHotelImage(HotelModel? hotel) {
+    if (hotel != null) {
+      return SizedBox(
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(30),
+          ),
+          child: hotel.imageUrl.startsWith('http')
+              ? Image.network(
+                  hotel.imageUrl,
+                  width: double.infinity,
+                  height: 350,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: double.infinity,
+                      height: 350,
+                      color: Colors.grey[300],
+                      child: const Center(child: CircularProgressIndicator()),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.asset(
+                      'assets/images/hotel.webp',
+                      width: double.infinity,
+                      height: 350,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                )
+              : Image.asset(
+                  hotel.imageUrl,
+                  width: double.infinity,
+                  height: 350,
+                  fit: BoxFit.cover,
+                ),
         ),
-        child: hotel.imageUrl.startsWith('http')
-            ? Image.network(
-                hotel.imageUrl,
-                width: double.infinity,
-                height: 350,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Container(
-                    width: double.infinity,
-                    height: 350,
-                    color: Colors.grey[300],
-                    child: const Center(child: CircularProgressIndicator()),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.asset(
-                    'assets/images/hotel.webp',
-                    width: double.infinity,
-                    height: 350,
-                    fit: BoxFit.cover,
-                  );
-                },
-              )
-            : Image.asset(
-                hotel.imageUrl,
-                width: double.infinity,
-                height: 350,
-                fit: BoxFit.cover,
-              ),
-      ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: 350,
+      child: Image.asset('assets/images/hotel.webp', fit: BoxFit.cover),
     );
   }
 
-  Widget _buildHotelDetails(Hotel hotel) {
+  Widget _buildHotelDetails(HotelModel? hotel) {
+    if (hotel == null) {
+      return const SizedBox.shrink();
+    }
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -622,7 +620,11 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     );
   }
 
-  Widget _buildHotelAttributes(Hotel hotel) {
+  Widget _buildHotelAttributes(HotelModel? hotel) {
+    if (hotel == null) {
+      return const SizedBox.shrink();
+    }
+
     return Row(
       children: [
         Expanded(
@@ -660,7 +662,11 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     );
   }
 
-  Widget _buildAboutSection(Hotel hotel) {
+  Widget _buildAboutSection(HotelModel? hotel) {
+    if (hotel == null) {
+      return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(

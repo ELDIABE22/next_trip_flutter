@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:next_trip/features/hotels/data/models/hotel_model.dart';
+import 'package:next_trip/features/hotels/infrastructure/models/hotel_model.dart';
 import '../models/hotel_booking_model.dart';
 
 class HotelBookingService {
@@ -7,7 +7,7 @@ class HotelBookingService {
   final String _collection = 'hotel_bookings';
 
   Future<HotelBooking> createBooking({
-    required Hotel hotel,
+    required HotelModel hotel,
     required String userId,
     required String guestName,
     required String guestEmail,

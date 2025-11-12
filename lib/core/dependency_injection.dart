@@ -21,6 +21,17 @@ import 'package:next_trip/features/flights/domain/usecases/search_flights_usecas
 import 'package:next_trip/features/flights/domain/usecases/search_return_flights_usecase.dart';
 import 'package:next_trip/features/flights/infrastructure/datasources/flight_remote_datasource.dart';
 import 'package:next_trip/features/flights/infrastructure/repositories/flight_repository_impl.dart';
+import 'package:next_trip/features/hotels/application/bloc/hotel_bloc.dart';
+import 'package:next_trip/features/hotels/domain/repositories/hotel_repository.dart';
+import 'package:next_trip/features/hotels/domain/usecases/get_all_hotels_usecase.dart';
+import 'package:next_trip/features/hotels/domain/usecases/get_hotel_by_id_usecase.dart';
+import 'package:next_trip/features/hotels/domain/usecases/get_hotels_by_city_stream_usecase.dart';
+import 'package:next_trip/features/hotels/domain/usecases/get_hotels_by_city_usecase.dart';
+import 'package:next_trip/features/hotels/domain/usecases/get_hotels_stream_usecase.dart';
+import 'package:next_trip/features/hotels/domain/usecases/hotel_refresh_usecase.dart';
+
+// Hotels imports
+import 'package:next_trip/features/hotels/infrastructure/datasources/hotel_remote_datasource.dart';
 
 // Flight Booking imports
 import 'package:next_trip/features/bookings/domain/usecases/create_booking_usecase.dart';
@@ -32,6 +43,7 @@ import 'package:next_trip/features/bookings/domain/usecases/cancel_booking_useca
 import 'package:next_trip/features/bookings/domain/usecases/get_user_bookings_usecase.dart';
 import 'package:next_trip/features/bookings/domain/usecases/get_user_round_trip_bookings_usecase.dart';
 import 'package:next_trip/features/bookings/application/bloc/flight_booking_bloc.dart';
+import 'package:next_trip/features/hotels/infrastructure/repositories/hotel_repository_impl.dart';
 
 void setupDependencies() {
   // Firebase instances
@@ -138,6 +150,41 @@ void setupDependencies() {
       cancelBookingUsecase: Get.find<CancelBookingUseCase>(),
       createBookingUseCase: Get.find<CreateBookingUseCase>(),
       createRoundTripBookingUseCase: Get.find<CreateRoundTripBookingUseCase>(),
+    ),
+    permanent: true,
+  );
+
+  // --- HOTELS  ---
+
+  // Data sources
+  Get.lazyPut<HotelRemoteDataSource>(
+    () => HotelRemoteDataSource(firestore: Get.find<FirebaseFirestore>()),
+  );
+
+  // Repositories
+  Get.lazyPut<HotelRepository>(
+    () => HotelRepositoryImpl(
+      remoteDataSource: Get.find<HotelRemoteDataSource>(),
+    ),
+  );
+
+  // Use cases
+  Get.lazyPut(() => GetAllHotelsUsecase(Get.find<HotelRepository>()));
+  Get.lazyPut(() => GetHotelByIdUsecase(Get.find<HotelRepository>()));
+  Get.lazyPut(() => GetHotelsByCityStreamUsecase(Get.find<HotelRepository>()));
+  Get.lazyPut(() => GetHotelsByCityUsecase(Get.find<HotelRepository>()));
+  Get.lazyPut(() => GetHotelsStreamUsecase(Get.find<HotelRepository>()));
+  Get.lazyPut(() => HotelRefreshUsecase(Get.find<HotelRepository>()));
+
+  // Bloc
+  Get.put<HotelBloc>(
+    HotelBloc(
+      getAllHotelsUsecase: Get.find<GetAllHotelsUsecase>(),
+      getHotelByIdUsecase: Get.find<GetHotelByIdUsecase>(),
+      getHotelsByCityStreamUsecase: Get.find<GetHotelsByCityStreamUsecase>(),
+      getHotelsByCityUsecase: Get.find<GetHotelsByCityUsecase>(),
+      getHotelsStreamUsecase: Get.find<GetHotelsStreamUsecase>(),
+      hotelRefreshUsecase: Get.find<HotelRefreshUsecase>(),
     ),
     permanent: true,
   );

@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:next_trip/features/hotels/data/models/hotel_model.dart';
+
+import 'package:next_trip/features/hotels/infrastructure/models/hotel_model.dart';
 
 import '../models/hotel_booking_model.dart';
 import '../services/hotel_booking_service.dart';
@@ -104,7 +105,7 @@ class HotelBookingController {
 
   // Crear una nueva reserva
   Future<bool> createBooking({
-    required Hotel hotel,
+    required HotelModel hotel,
     required String userId,
     String? specialRequests,
   }) async {
@@ -305,13 +306,13 @@ class HotelBookingController {
   }
 
   // Calcular precio total para las fechas seleccionadas
-  double calculateTotalPrice(Hotel hotel) {
+  double calculateTotalPrice(HotelModel hotel) {
     if (!hasValidDateRange) return 0.0;
     return hotel.price * numberOfNights;
   }
 
   // Formatear precio total
-  String getFormattedTotalPrice(Hotel hotel) {
+  String getFormattedTotalPrice(HotelModel hotel) {
     final total = calculateTotalPrice(hotel);
     return '\$${total.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }

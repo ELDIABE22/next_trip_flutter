@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:next_trip/core/utils/flight_prefs.dart';
 import 'package:next_trip/core/widgets/page_layout.dart';
-import 'package:next_trip/features/hotels/data/controllers/hotel_controller.dart';
+import 'package:next_trip/features/hotels/application/bloc/hotel_bloc.dart';
+import 'package:next_trip/features/hotels/application/bloc/hotel_event.dart';
+import 'package:next_trip/features/hotels/application/bloc/hotel_state.dart';
+import 'package:next_trip/features/hotels/infrastructure/models/hotel_model.dart';
+import 'package:next_trip/features/hotels/presentation/page/hotel_details_page.dart';
 import 'package:next_trip/features/hotels/presentation/widgets/hotelSearchPage/hotel_card.dart';
 
 class HotelSearchPage extends StatefulWidget {
@@ -12,8 +17,6 @@ class HotelSearchPage extends StatefulWidget {
 }
 
 class _HotelSearchPageState extends State<HotelSearchPage> {
-  late final HotelController _hotelController;
-
   int selectedIndex = 1;
   String? destinationCity;
   bool _isInitialized = false;
@@ -21,21 +24,10 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
   @override
   void initState() {
     super.initState();
-    _hotelController = HotelController(
-      onStateChanged: () {
-        if (mounted) setState(() {});
-      },
-    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeData();
     });
-  }
-
-  @override
-  void dispose() {
-    _hotelController.dispose();
-    super.dispose();
   }
 
   Future<void> _initializeData() async {
@@ -61,14 +53,16 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
 
   Future<void> _setupHotelStream() async {
     if (destinationCity != null && destinationCity!.isNotEmpty) {
-      _hotelController.loadHotelsByCity(destinationCity!);
+      context.read<HotelBloc>().add(
+        GetHotelsByCityRequested(city: destinationCity!),
+      );
     } else {
-      _hotelController.loadAllHotels();
+      context.read<HotelBloc>().add(GetAllHotelsRequested());
     }
   }
 
   Future<void> _refreshHotels() async {
-    await _hotelController.refresh();
+    context.read<HotelBloc>().add(HotelRefreshRequested());
   }
 
   void onItemTapped(int index) {
@@ -77,133 +71,144 @@ class _HotelSearchPageState extends State<HotelSearchPage> {
     });
   }
 
-  Widget _buildHotelsList() {
-    if (_hotelController.isLoading && _hotelController.hotels.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text(
-              'Cargando hoteles...',
-              style: TextStyle(fontSize: 16, color: Colors.black),
-            ),
-          ],
-        ),
-      );
-    }
+  Future<void> _navigateToDetails(HotelModel hotel) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => HotelDetailsPage(hotel: hotel)),
+    );
+    if (!mounted) return;
+    context.read<HotelBloc>().add(
+      destinationCity != null
+          ? GetHotelsByCityRequested(city: destinationCity!)
+          : GetAllHotelsRequested(),
+    );
+  }
 
-    if (_hotelController.hasError && _hotelController.hotels.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text(
-              'Error al cargar hoteles',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                _hotelController.errorMessage ?? 'Error desconocido',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.black),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
+  Widget _buildHotelsList() {
+    return BlocBuilder<HotelBloc, HotelState>(
+      builder: (context, state) {
+        if (state is HotelLoading) {
+          return const Center(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _hotelController.clearError();
-                    _hotelController.loadAllHotels();
-                  },
-                  child: const Text('Reintentar'),
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: () {
-                    _hotelController.clearError();
-                    setState(() => destinationCity = null);
-                    _hotelController.listenToHotelsStream();
-                  },
-                  child: const Text('Ver todos'),
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Cargando hoteles...',
+                  style: TextStyle(fontSize: 16, color: Colors.black),
                 ),
               ],
             ),
-          ],
-        ),
-      );
-    }
-
-    if (_hotelController.hotels.isEmpty && !_hotelController.isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.hotel_outlined, size: 64, color: Colors.black),
-            const SizedBox(height: 16),
-            Text(
-              destinationCity != null
-                  ? 'No hay hoteles disponibles en $destinationCity'
-                  : 'No se encontraron hoteles disponibles',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+          );
+        } else if (state is HotelError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error al cargar hoteles',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<HotelBloc>().add(
+                          GetHotelsByCityRequested(city: destinationCity!),
+                        );
+                      },
+                      child: const Text('Reintentar'),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () {
+                        setState(() => destinationCity = null);
+                        context.read<HotelBloc>().add(
+                          GetHotelsStreamRequested(),
+                        );
+                      },
+                      child: const Text('Ver todos'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        } else if (state is HotelListLoaded) {
+          if (state.hotels.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.hotel_outlined,
+                    size: 64,
+                    color: Colors.black,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    destinationCity != null
+                        ? 'No hay hoteles disponibles en $destinationCity'
+                        : 'No se encontraron hoteles disponibles',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => destinationCity = null);
+                      context.read<HotelBloc>().add(
+                        GetHotelsByCityRequested(city: destinationCity!),
+                      );
+                    },
+                    child: const Text('Reintentar'),
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                setState(() => destinationCity = null);
-                _hotelController.loadAllHotels();
-              },
-              child: const Text('Ver todos los hoteles'),
-            ),
-          ],
-        ),
-      );
-    }
+            );
+          }
+          return RefreshIndicator(
+            onRefresh: _refreshHotels,
+            child: Column(
+              children: [
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: state.hotels.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 20),
+                  itemBuilder: (context, index) {
+                    final hotel = state.hotels[index];
+                    return HotelCard(
+                      hotel: hotel,
+                      onTap: () => _navigateToDetails(hotel),
+                    );
+                  },
+                ),
 
-    // Success state
-    return RefreshIndicator(
-      onRefresh: _refreshHotels,
-      child: Column(
-        children: [
-          if (_hotelController.isLoading && _hotelController.hasHotels)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: LinearProgressIndicator(),
+                if (state.hotels.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Mostrando ${state.hotels.length} hoteles',
+                      style: TextStyle(color: Colors.black, fontSize: 14),
+                    ),
+                  ),
+              ],
             ),
-
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _hotelController.hotels.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 20),
-            itemBuilder: (context, index) {
-              final hotel = _hotelController.hotels[index];
-              return HotelCard(hotel: hotel, controller: _hotelController);
-            },
-          ),
-
-          if (_hotelController.hasHotels)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Mostrando ${_hotelController.hotels.length} hoteles',
-                style: TextStyle(color: Colors.black, fontSize: 14),
-              ),
-            ),
-        ],
-      ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 

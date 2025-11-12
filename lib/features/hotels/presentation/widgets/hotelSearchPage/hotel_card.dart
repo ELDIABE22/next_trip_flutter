@@ -1,27 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/hotels/data/controllers/hotel_controller.dart';
-import 'package:next_trip/features/hotels/data/models/hotel_model.dart';
-import 'package:next_trip/features/hotels/presentation/page/hotel_details_page.dart';
+import 'package:next_trip/features/hotels/infrastructure/models/hotel_model.dart';
 import 'package:next_trip/features/hotels/presentation/widgets/hotelSearchPage/hotel_attribute_tag.dart';
 
 class HotelCard extends StatelessWidget {
-  final Hotel hotel;
-  final HotelController? controller;
+  final HotelModel hotel;
+  final VoidCallback onTap;
 
-  const HotelCard({super.key, required this.hotel, this.controller});
+  const HotelCard({super.key, required this.hotel, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        controller?.selectHotel(hotel);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HotelDetailsPage(hotel: hotel),
-          ),
-        );
-      },
+      onTap: onTap,
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(

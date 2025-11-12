@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:next_trip/features/hotels/data/models/hotel_model.dart';
+import 'package:next_trip/features/hotels/infrastructure/models/hotel_model.dart';
 
 enum BookingStatus { confirmed, cancelled, completed }
 
@@ -18,7 +18,7 @@ class HotelBooking {
   final DateTime bookingDate;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final Hotel hotelDetails;
+  final HotelModel hotelDetails;
 
   HotelBooking({
     required this.id,
@@ -69,15 +69,15 @@ class HotelBooking {
   }
 
   factory HotelBooking.fromMap(Map<String, dynamic> map, String documentId) {
-    Hotel hotelDetails;
+    HotelModel hotelDetails;
     if (map['hotel_details'] != null &&
         map['hotel_details'] is Map<String, dynamic>) {
-      hotelDetails = Hotel.fromMap(
-        map['hotel_details'] as Map<String, dynamic>,
+      hotelDetails = HotelModel.fromMap(
         map['hotelId'] ?? '',
+        map['hotel_details'] as Map<String, dynamic>,
       );
     } else {
-      hotelDetails = Hotel(
+      hotelDetails = HotelModel(
         id: map['hotelId'] ?? '',
         name: 'Hotel no disponible',
         address: '',
@@ -118,14 +118,15 @@ class HotelBooking {
   }
 
   factory HotelBooking.fromJson(Map<String, dynamic> json) {
-    Hotel hotelDetails;
+    HotelModel hotelDetails;
     if (json['hotel_details'] != null &&
         json['hotel_details'] is Map<String, dynamic>) {
-      hotelDetails = Hotel.fromJson(
+      hotelDetails = HotelModel.fromMap(
+        json['hotelId'] ?? '',
         json['hotel_details'] as Map<String, dynamic>,
       );
     } else {
-      hotelDetails = Hotel(
+      hotelDetails = HotelModel(
         id: json['hotelId'] ?? '',
         name: 'Hotel no disponible',
         address: '',
@@ -237,7 +238,7 @@ class HotelBooking {
     DateTime? bookingDate,
     DateTime? createdAt,
     DateTime? updatedAt,
-    Hotel? hotelDetails,
+    HotelModel? hotelDetails,
   }) {
     return HotelBooking(
       id: id ?? this.id,
