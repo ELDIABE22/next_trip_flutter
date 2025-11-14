@@ -1,11 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:next_trip/features/bookings/application/bloc/flight_booking_event.dart';
-import 'package:next_trip/features/bookings/application/bloc/flight_booking_state.dart';
-import 'package:next_trip/features/bookings/domain/usecases/cancel_booking_usecase.dart';
-import 'package:next_trip/features/bookings/domain/usecases/create_booking_usecase.dart';
-import 'package:next_trip/features/bookings/domain/usecases/create_round_trip_booking_usecase.dart';
-import 'package:next_trip/features/bookings/domain/usecases/get_user_bookings_usecase.dart';
-import 'package:next_trip/features/bookings/domain/usecases/get_user_round_trip_bookings_usecase.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking/flight_booking_event.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking/flight_booking_state.dart';
+import 'package:next_trip/features/bookings/domain/usecases/flight_booking/cancel_booking_usecase.dart';
+import 'package:next_trip/features/bookings/domain/usecases/flight_booking/create_booking_usecase.dart';
+import 'package:next_trip/features/bookings/domain/usecases/flight_booking/create_round_trip_booking_usecase.dart';
+import 'package:next_trip/features/bookings/domain/usecases/flight_booking/get_user_bookings_usecase.dart';
+import 'package:next_trip/features/bookings/domain/usecases/flight_booking/get_user_round_trip_bookings_usecase.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 
 class FlightBookingBloc extends Bloc<FlightBookingEvent, FlightBookingState> {
   final CreateBookingUseCase createBookingUseCase;
@@ -23,7 +24,10 @@ class FlightBookingBloc extends Bloc<FlightBookingEvent, FlightBookingState> {
   }) : super(FlightBookingInitial()) {
     on<CreateBookingRequested>(_onCreateBookingRequested);
     on<CreateRoundTripBookingRequested>(_onCreateRoundTripBookingRequested);
-    on<GetUserBookingsRequested>(_onGetUserBookingsRequested);
+    on<GetUserBookingsRequested>(
+      _onGetUserBookingsRequested,
+      transformer: restartable(),
+    );
     on<GetUserRoundTripBookingsRequested>(_onGetUserRoundTripBookingsRequested);
     on<CancelBookingRequested>(_onCancelBookingRequested);
   }

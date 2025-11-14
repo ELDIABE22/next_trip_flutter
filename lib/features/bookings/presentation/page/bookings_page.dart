@@ -4,14 +4,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:next_trip/core/utils/helpers.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/core/widgets/page_layout.dart';
-import 'package:next_trip/features/bookings/application/bloc/flight_booking_bloc.dart';
-import 'package:next_trip/features/bookings/application/bloc/flight_booking_event.dart';
-import 'package:next_trip/features/bookings/application/bloc/flight_booking_state.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking/flight_booking_bloc.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking/flight_booking_event.dart';
+import 'package:next_trip/features/bookings/application/bloc/flight_booking/flight_booking_state.dart';
+import 'package:next_trip/features/bookings/application/bloc/hotel_booking/hotel_booking_bloc.dart';
+import 'package:next_trip/features/bookings/application/bloc/hotel_booking/hotel_booking_event.dart';
+import 'package:next_trip/features/bookings/application/bloc/hotel_booking/hotel_booking_state.dart';
 import 'package:next_trip/features/bookings/data/controllers/car_booking_controller.dart';
-import 'package:next_trip/features/bookings/data/controllers/hotel_booking_controller.dart';
 import 'package:next_trip/features/bookings/data/models/car_booking_model.dart';
-import 'package:next_trip/features/bookings/data/models/hotel_booking_model.dart';
 import 'package:next_trip/features/bookings/infrastructure/models/flight_booking_model.dart';
+import 'package:next_trip/features/bookings/infrastructure/models/hotel_booking_model.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/booking_tabs.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/flight_booking_card.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/hotel_booking_card.dart';
@@ -29,31 +31,25 @@ class _BookingsPageState extends State<BookingsPage> {
   int selectedIndex = 3;
   int selectedTabIndex = 0;
 
-  final HotelBookingController _hotelController = HotelBookingController();
+  final currentUser = FirebaseAuth.instance.currentUser;
+
   final CarBookingController _carBookingController = CarBookingController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (FirebaseAuth.instance.currentUser == null && mounted) {
+      if (currentUser == null && mounted) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       } else {
-        final userId = FirebaseAuth.instance.currentUser!.uid;
+        final userId = currentUser!.uid;
         context.read<FlightBookingBloc>().add(GetUserBookingsRequested(userId));
-        await _loadHotelBookings(userId);
+        context.read<HotelBookingBloc>().add(
+          GetBookingsByUserRequested(userId),
+        );
         await _loadCarBookings(userId);
       }
     });
-  }
-
-  Future<void> _loadHotelBookings(String userId) async {
-    try {
-      await _hotelController.loadUserBookings(userId);
-      if (mounted) setState(() {});
-    } catch (e) {
-      debugPrint('Error loading hotel bookings: $e');
-    }
   }
 
   Future<void> _loadCarBookings(String userId) async {
@@ -67,7 +63,6 @@ class _BookingsPageState extends State<BookingsPage> {
 
   @override
   void dispose() {
-    _hotelController.dispose();
     _carBookingController.dispose();
     super.dispose();
   }
@@ -82,6 +77,26 @@ class _BookingsPageState extends State<BookingsPage> {
     setState(() {
       selectedTabIndex = index;
     });
+
+    if (currentUser?.uid != null) {
+      final userId = currentUser!.uid;
+
+      switch (index) {
+        case 0:
+          context.read<FlightBookingBloc>().add(
+            GetUserBookingsRequested(userId),
+          );
+          break;
+        case 1:
+          context.read<HotelBookingBloc>().add(
+            GetBookingsByUserRequested(userId),
+          );
+          break;
+        case 2:
+          _loadCarBookings(userId);
+          break;
+      }
+    }
   }
 
   Widget content() {
@@ -97,10 +112,10 @@ class _BookingsPageState extends State<BookingsPage> {
     }
   }
 
-  Map<String, List<HotelBooking>> _groupHotelBookingsByDate(
-    List<HotelBooking> bookings,
+  Map<String, List<HotelBookingModel>> _groupHotelBookingsByDate(
+    List<HotelBookingModel> bookings,
   ) {
-    final grouped = <String, List<HotelBooking>>{};
+    final grouped = <String, List<HotelBookingModel>>{};
     final dateMap = <String, DateTime>{};
 
     for (var booking in bookings) {
@@ -201,10 +216,9 @@ class _BookingsPageState extends State<BookingsPage> {
                 const SizedBox(height: 16),
                 CustomButton(
                   onPressed: () async {
-                    final userId = FirebaseAuth.instance.currentUser?.uid;
-                    if (userId != null) {
+                    if (currentUser?.uid != null) {
                       context.read<FlightBookingBloc>().add(
-                        GetUserBookingsRequested(userId),
+                        GetUserBookingsRequested(currentUser!.uid),
                       );
                     }
                   },
@@ -253,10 +267,9 @@ class _BookingsPageState extends State<BookingsPage> {
             final groupedBookings = _groupBookingsByDate(state.bookings);
             return RefreshIndicator(
               onRefresh: () async {
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                if (userId != null) {
+                if (currentUser?.uid != null) {
                   context.read<FlightBookingBloc>().add(
-                    GetUserBookingsRequested(userId),
+                    GetUserBookingsRequested(currentUser!.uid),
                   );
                 }
               },
@@ -348,157 +361,165 @@ class _BookingsPageState extends State<BookingsPage> {
   }
 
   Widget hotelBookings() {
-    // Estado de carga
-    if (_hotelController.isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Cargando reservas de hoteles...'),
-          ],
-        ),
-      );
-    }
-
-    // Estado de error
-    if (_hotelController.hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text(
-              'Error al cargar las reservas',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return BlocBuilder<HotelBookingBloc, HotelBookingState>(
+      builder: (context, state) {
+        if (state is HotelBookingLoading) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Cargando reservas de hoteles...'),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              _hotelController.errorMessage ?? 'Error desconocido',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            CustomButton(
-              onPressed: () async {
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                if (userId != null) {
-                  await _loadHotelBookings(userId);
-                }
-              },
-              text: 'Reintentar',
-            ),
-            const SizedBox(height: 16),
-          ],
-        ),
-      );
-    }
-
-    // Estado vacío
-    if (_hotelController.userBookings.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.hotel_outlined, size: 64, color: Colors.black),
-            const SizedBox(height: 16),
-            const Text(
-              'No tienes reservas de hoteles',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Cuando hagas una reserva, aparecerá aquí.',
-              style: TextStyle(color: Colors.black),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            CustomButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              text: 'Explorar Hoteles',
-            ),
-          ],
-        ),
-      );
-    }
-
-    final groupedBookings = _groupHotelBookingsByDate(
-      _hotelController.userBookings,
-    );
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        final userId = FirebaseAuth.instance.currentUser?.uid;
-        if (userId != null) {
-          await _loadHotelBookings(userId);
-        }
-      },
-      child: Column(
-        children: groupedBookings.entries.map((entry) {
-          final date = entry.key;
-          final bookings = entry.value;
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color.fromARGB(255, 218, 218, 218),
-                  borderRadius: BorderRadius.circular(15),
+          );
+        } else if (state is HotelBookingError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error al cargar las reservas',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                child: Row(
+                const SizedBox(height: 16),
+                CustomButton(
+                  onPressed: () {
+                    if (currentUser?.uid != null) {
+                      context.read<HotelBookingBloc>().add(
+                        GetBookingsByUserRequested(currentUser!.uid),
+                      );
+                    }
+                  },
+                  text: 'Reintentar',
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          );
+        } else if (state is HotelBookingsLoaded) {
+          if (state.bookings.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.hotel_outlined,
+                    size: 64,
+                    color: Colors.black,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No tienes reservas de hoteles',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Cuando hagas una reserva, aparecerá aquí.',
+                    style: TextStyle(color: Colors.black),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    text: 'Explorar Hoteles',
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final groupedBookings = _groupHotelBookingsByDate(state.bookings);
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              if (currentUser?.uid != null) {
+                context.read<HotelBookingBloc>().add(
+                  GetBookingsByUserRequested(currentUser!.uid),
+                );
+              }
+            },
+            child: Column(
+              children: groupedBookings.entries.map((entry) {
+                final date = entry.key;
+                final bookings = entry.value;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 12,
-                      ),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 218, 218, 218),
                         borderRadius: BorderRadius.circular(15),
-                        color: Colors.black,
                       ),
-                      child: Text(
-                        date.split(' ')[0],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(15),
+                              color: Colors.black,
+                            ),
+                            child: Text(
+                              date.split(' ')[0],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${date.split(' ')[1]} ${date.split(' ')[2]}',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      '${date.split(' ')[1]} ${date.split(' ')[2]}',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 2,
-                      ),
-                    ),
+                    const SizedBox(height: 10),
+
+                    ...bookings.map((booking) {
+                      return HotelBookingCard(
+                        booking: booking,
+                        onBookingChanged: () {
+                          if (currentUser?.uid != null) {
+                            context.read<HotelBookingBloc>().add(
+                              GetBookingsByUserRequested(currentUser!.uid),
+                            );
+                          }
+                        },
+                      );
+                    }),
+
+                    const SizedBox(height: 10),
                   ],
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              ...bookings.map((booking) {
-                return HotelBookingCard(booking: booking);
-              }),
-
-              const SizedBox(height: 10),
-            ],
+                );
+              }).toList(),
+            ),
           );
-        }).toList(),
-      ),
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 
@@ -537,9 +558,8 @@ class _BookingsPageState extends State<BookingsPage> {
             const SizedBox(height: 16),
             CustomButton(
               onPressed: () async {
-                final userId = FirebaseAuth.instance.currentUser?.uid;
-                if (userId != null) {
-                  await _loadCarBookings(userId);
+                if (currentUser?.uid != null) {
+                  await _loadCarBookings(currentUser!.uid);
                 }
               },
               text: 'Reintentar',
@@ -593,9 +613,8 @@ class _BookingsPageState extends State<BookingsPage> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        final userId = FirebaseAuth.instance.currentUser?.uid;
-        if (userId != null) {
-          await _loadCarBookings(userId);
+        if (currentUser?.uid != null) {
+          await _loadCarBookings(currentUser!.uid);
         }
       },
       child: Column(

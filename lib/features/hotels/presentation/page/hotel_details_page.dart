@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/core/widgets/bottom_reserve_panel.dart';
-import 'package:next_trip/features/bookings/data/controllers/hotel_booking_controller.dart';
 import 'package:next_trip/features/bookings/presentation/widgets/booking_form_dialog.dart';
 import 'package:next_trip/features/hotels/application/bloc/hotel_bloc.dart';
 import 'package:next_trip/features/hotels/application/bloc/hotel_event.dart';
@@ -22,32 +21,27 @@ class HotelDetailsPage extends StatefulWidget {
 }
 
 class _HotelDetailsPageState extends State<HotelDetailsPage> {
-  late final HotelBookingController _bookingController;
+  DateTime? _selectedCheckInDate;
+  DateTime? _selectedCheckOutDate;
 
   @override
   void initState() {
     super.initState();
-    _setupControllers();
     context.read<HotelBloc>().add(GetHotelByIdRequested(id: widget.hotel.id));
-  }
-
-  void _setupControllers() {
-    _bookingController = HotelBookingController(
-      onStateChanged: () {
-        if (mounted) setState(() {});
-      },
-    );
-  }
-
-  @override
-  void dispose() {
-    _bookingController.dispose();
-    super.dispose();
   }
 
   bool get _isUserLoggedIn {
     return FirebaseAuth.instance.currentUser != null;
   }
+
+  bool get _hasValidDateRange =>
+      _selectedCheckInDate != null &&
+      _selectedCheckOutDate != null &&
+      _selectedCheckOutDate!.isAfter(_selectedCheckInDate!);
+
+  int get _numberOfNights => _hasValidDateRange
+      ? _selectedCheckOutDate!.difference(_selectedCheckInDate!).inDays
+      : 0;
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +215,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              if (_bookingController.hasValidDateRange)
+              if (_hasValidDateRange)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -232,7 +226,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${_bookingController.numberOfNights} noches',
+                    '$_numberOfNights noches',
                     style: const TextStyle(
                       color: Colors.green,
                       fontWeight: FontWeight.w600,
@@ -250,7 +244,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
               Expanded(
                 child: _buildDateSelector(
                   label: 'Fecha de entrada',
-                  date: _bookingController.selectedCheckInDate,
+                  date: _selectedCheckInDate,
                   onTap: () => _selectCheckInDate(),
                 ),
               ),
@@ -258,7 +252,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
               Expanded(
                 child: _buildDateSelector(
                   label: 'Fecha de salida',
-                  date: _bookingController.selectedCheckOutDate,
+                  date: _selectedCheckOutDate,
                   onTap: () => _selectCheckOutDate(),
                 ),
               ),
@@ -267,7 +261,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
 
           const SizedBox(height: 20),
 
-          if (_bookingController.hasValidDateRange) ...[
+          if (_hasValidDateRange) ...[
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -281,14 +275,14 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        '${hotel.formattedPrice} x ${_bookingController.numberOfNights} noches',
+                        '${hotel.formattedPrice} x $_numberOfNights noches',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.white,
                         ),
                       ),
                       Text(
-                        _bookingController.getFormattedTotalPrice(hotel),
+                        _getFormattedTotalPrice(hotel),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -310,7 +304,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
                         ),
                       ),
                       Text(
-                        _bookingController.getFormattedTotalPrice(hotel),
+                        _getFormattedTotalPrice(hotel),
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -381,11 +375,11 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     }
 
     return BottomReservePanel(
-      totalPrice: _bookingController.hasValidDateRange
-          ? _bookingController.getFormattedTotalPrice(hotel)
+      totalPrice: _hasValidDateRange
+          ? _getFormattedTotalPrice(hotel)
           : hotel.formattedPrice,
-      dateRange: _bookingController.hasValidDateRange
-          ? 'por ${_bookingController.numberOfNights} noches'
+      dateRange: _hasValidDateRange
+          ? 'por $_numberOfNights noches'
           : 'por noche',
       buttonText: 'Reservar',
       onPressed: () => _handleReservation(hotel),
@@ -398,7 +392,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
       return;
     }
 
-    if (!_bookingController.hasValidDateRange) {
+    if (!_hasValidDateRange) {
       _showSnackBar(
         'Por favor selecciona las fechas de tu estadía',
         isError: true,
@@ -410,7 +404,9 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
       context: context,
       builder: (context) => BookingFormDialog(
         hotel: hotel,
-        bookingController: _bookingController,
+        checkInDate: _selectedCheckInDate!,
+        checkOutDate: _selectedCheckOutDate!,
+        numberOfNights: _numberOfNights,
       ),
     );
 
@@ -449,7 +445,7 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
   Future<void> _selectCheckInDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _bookingController.selectedCheckInDate ?? DateTime.now(),
+      initialDate: _selectedCheckInDate ?? DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
@@ -463,7 +459,13 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     );
 
     if (picked != null) {
-      _bookingController.setCheckInDate(picked);
+      setState(() {
+        _selectedCheckInDate = picked;
+        if (_selectedCheckOutDate != null &&
+            !_selectedCheckOutDate!.isAfter(picked)) {
+          _selectedCheckOutDate = null;
+        }
+      });
     }
   }
 
@@ -471,15 +473,11 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate:
-          _bookingController.selectedCheckOutDate ??
-          (_bookingController.selectedCheckInDate?.add(
-                const Duration(days: 1),
-              ) ??
+          _selectedCheckOutDate ??
+          (_selectedCheckInDate?.add(const Duration(days: 1)) ??
               DateTime.now().add(const Duration(days: 1))),
       firstDate:
-          _bookingController.selectedCheckInDate?.add(
-            const Duration(days: 1),
-          ) ??
+          _selectedCheckInDate?.add(const Duration(days: 1)) ??
           DateTime.now().add(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
@@ -493,8 +491,16 @@ class _HotelDetailsPageState extends State<HotelDetailsPage> {
     );
 
     if (picked != null) {
-      _bookingController.setCheckOutDate(picked);
+      setState(() {
+        _selectedCheckOutDate = picked;
+      });
     }
+  }
+
+  String _getFormattedTotalPrice(HotelModel hotel) {
+    if (!_hasValidDateRange) return hotel.formattedPrice;
+    final total = hotel.price * _numberOfNights;
+    return '\$${total.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }
 
   void _showSnackBar(String message, {required bool isError}) {

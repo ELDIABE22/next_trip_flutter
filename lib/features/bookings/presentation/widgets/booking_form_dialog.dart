@@ -1,19 +1,26 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:next_trip/core/utils/form_validators.dart';
 import 'package:next_trip/core/widgets/input.dart';
-import 'package:next_trip/features/bookings/data/controllers/hotel_booking_controller.dart';
+import 'package:next_trip/features/bookings/application/bloc/hotel_booking/hotel_booking_bloc.dart';
+import 'package:next_trip/features/bookings/application/bloc/hotel_booking/hotel_booking_event.dart';
+import 'package:next_trip/features/bookings/application/bloc/hotel_booking/hotel_booking_state.dart';
 import 'package:next_trip/features/hotels/infrastructure/models/hotel_model.dart';
 import 'package:next_trip/features/hotels/presentation/page/payment_success_page.dart';
 
 class BookingFormDialog extends StatefulWidget {
   final HotelModel hotel;
-  final HotelBookingController bookingController;
+  final DateTime checkInDate;
+  final DateTime checkOutDate;
+  final int numberOfNights;
 
   const BookingFormDialog({
     super.key,
     required this.hotel,
-    required this.bookingController,
+    required this.checkInDate,
+    required this.checkOutDate,
+    required this.numberOfNights,
   });
 
   @override
@@ -25,82 +32,110 @@ class _BookingFormDialogState extends State<BookingFormDialog> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _requestsController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController.text = widget.bookingController.guestName;
-    _emailController.text = widget.bookingController.guestEmail;
-    _phoneController.text = widget.bookingController.guestPhone;
-  }
+  bool _isCreatingBooking = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
-    _requestsController.dispose();
     super.dispose();
+  }
+
+  String _getFormattedTotalPrice() {
+    final totalPrice = widget.hotel.price * widget.numberOfNights;
+    return '\$${totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Expanded(
-            child: Text(
-              'Información del Huésped',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return BlocListener<HotelBookingBloc, HotelBookingState>(
+      listener: (context, state) {
+        if (state is HotelBookingSuccess) {
+          setState(() {
+            _isCreatingBooking = false;
+          });
+
+          Navigator.of(context).pop(true);
+
+          if (state.booking != null) {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PaymentSuccessPage(
+                  booking: state.booking!,
+                  paymentMethod: 'Tarjeta de crédito',
+                  transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
+                ),
+              ),
+            );
+          }
+        } else if (state is HotelBookingError) {
+          setState(() {
+            _isCreatingBooking = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.error), backgroundColor: Colors.red),
+          );
+        } else if (state is HotelBookingLoading) {
+          setState(() {
+            _isCreatingBooking = true;
+          });
+        }
+      },
+      child: AlertDialog(
+        title: Row(
+          children: [
+            const Expanded(
+              child: Text(
+                'Información del Huésped',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildBookingSummary(),
+                  const SizedBox(height: 20),
+                  _buildNameField(),
+                  const SizedBox(height: 16),
+                  _buildEmailField(),
+                  const SizedBox(height: 16),
+                  _buildPhoneField(),
+                ],
+              ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.close),
+        ),
+        actions: [
+          TextButton(
             onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: _isCreatingBooking ? null : _handleCreateBooking,
+            child: _isCreatingBooking
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Confirmar Reserva'),
           ),
         ],
       ),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildBookingSummary(),
-                const SizedBox(height: 20),
-
-                _buildNameField(),
-                const SizedBox(height: 16),
-                _buildEmailField(),
-                const SizedBox(height: 16),
-                _buildPhoneField(),
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: widget.bookingController.isCreatingBooking
-              ? null
-              : _handleCreateBooking,
-          child: widget.bookingController.isCreatingBooking
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Confirmar Reserva'),
-        ),
-      ],
     );
   }
 
@@ -125,12 +160,12 @@ class _BookingFormDialogState extends State<BookingFormDialog> {
               const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
               const SizedBox(width: 8),
               Text(
-                '${widget.bookingController.selectedCheckInDate!.day}/${widget.bookingController.selectedCheckInDate!.month}/${widget.bookingController.selectedCheckInDate!.year}',
+                '${widget.checkInDate.day}/${widget.checkInDate.month}/${widget.checkInDate.year}',
                 style: const TextStyle(fontSize: 14),
               ),
               const Text(' - '),
               Text(
-                '${widget.bookingController.selectedCheckOutDate!.day}/${widget.bookingController.selectedCheckOutDate!.month}/${widget.bookingController.selectedCheckOutDate!.year}',
+                '${widget.checkOutDate.day}/${widget.checkOutDate.month}/${widget.checkOutDate.year}',
                 style: const TextStyle(fontSize: 14),
               ),
             ],
@@ -141,7 +176,7 @@ class _BookingFormDialogState extends State<BookingFormDialog> {
               const Icon(Icons.nights_stay, size: 16, color: Colors.grey),
               const SizedBox(width: 8),
               Text(
-                '${widget.bookingController.numberOfNights} noches',
+                '${widget.numberOfNights} noches',
                 style: const TextStyle(fontSize: 14),
               ),
             ],
@@ -155,7 +190,7 @@ class _BookingFormDialogState extends State<BookingFormDialog> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text(
-                widget.bookingController.getFormattedTotalPrice(widget.hotel),
+                _getFormattedTotalPrice(),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -196,40 +231,23 @@ class _BookingFormDialogState extends State<BookingFormDialog> {
     );
   }
 
-  Future<void> _handleCreateBooking() async {
+  void _handleCreateBooking() {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    widget.bookingController.setGuestInfo(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      phone: _phoneController.text.trim(),
-    );
-
     final String userId = FirebaseAuth.instance.currentUser!.uid;
 
-    final success = await widget.bookingController.createBooking(
-      hotel: widget.hotel,
-      userId: userId,
-      specialRequests: _requestsController.text.trim().isNotEmpty
-          ? _requestsController.text.trim()
-          : null,
+    context.read<HotelBookingBloc>().add(
+      CreateBookingRequested(
+        hotel: widget.hotel,
+        userId: userId,
+        guestName: _nameController.text.trim(),
+        guestEmail: _emailController.text.trim(),
+        guestPhone: _phoneController.text.trim(),
+        checkInDate: widget.checkInDate,
+        checkOutDate: widget.checkOutDate,
+      ),
     );
-
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.of(context).pop(true);
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => PaymentSuccessPage(
-            booking: widget.bookingController.selectedBooking!,
-            paymentMethod: 'Tarjeta de crédito',
-            transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
-          ),
-        ),
-      );
-    }
   }
 }

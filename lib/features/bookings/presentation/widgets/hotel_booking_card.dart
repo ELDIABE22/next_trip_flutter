@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/bookings/data/models/hotel_booking_model.dart';
+import 'package:next_trip/features/bookings/domain/entities/hotel_booking.dart';
+import 'package:next_trip/features/bookings/infrastructure/models/hotel_booking_model.dart';
 import 'package:next_trip/features/bookings/presentation/page/booking_details_hotel.dart';
 
 class HotelBookingCard extends StatelessWidget {
-  final HotelBooking booking;
+  final HotelBookingModel booking;
+  final VoidCallback? onBookingChanged;
 
-  const HotelBookingCard({super.key, required this.booking});
+  const HotelBookingCard({
+    super.key,
+    required this.booking,
+    this.onBookingChanged,
+  });
 
   Color _getStatusColor() {
     switch (booking.status) {
@@ -26,12 +32,16 @@ class HotelBookingCard extends StatelessWidget {
       children: [
         GestureDetector(
           onTap: () async {
-            await Navigator.push(
+            final result = await Navigator.push<bool>(
               context,
               MaterialPageRoute(
                 builder: (context) => BookingDetailsHotel(booking: booking),
               ),
             );
+
+            if (result == true && onBookingChanged != null) {
+              onBookingChanged!();
+            }
           },
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 10),
@@ -75,7 +85,7 @@ class HotelBookingCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              booking.hotelName,
+                              booking.hotelDetails.name,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -86,7 +96,7 @@ class HotelBookingCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              booking.hotelCity,
+                              booking.hotelDetails.city,
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey,
@@ -148,7 +158,7 @@ class HotelBookingCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            booking.dateRange,
+                            '${booking.checkInFormatted} - ${booking.checkOutFormatted}',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.white,
@@ -156,7 +166,7 @@ class HotelBookingCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'ID: #${booking.id.substring(0, 8)}',
+                            booking.id.substring(0, 8),
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.grey,

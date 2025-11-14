@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
-import 'package:next_trip/features/bookings/data/models/hotel_booking_model.dart';
+import 'package:next_trip/features/bookings/infrastructure/models/hotel_booking_model.dart';
 import 'package:next_trip/routes/app_routes.dart';
 
 class PaymentSuccessPage extends StatefulWidget {
-  final HotelBooking booking;
+  final HotelBookingModel booking;
   final String paymentMethod;
   final String transactionId;
 
@@ -338,7 +338,6 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage>
 
             const SizedBox(height: 16),
 
-            // Línea divisoria
             Container(height: 1, color: Colors.grey[200]),
 
             const SizedBox(height: 16),
