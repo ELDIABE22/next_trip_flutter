@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/domain/entities/car.dart';
 
 class CarSearchForm extends StatefulWidget {
   final Function(Map<String, dynamic>)? onSearch;

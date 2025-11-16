@@ -1,25 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/cars/data/controllers/car_controller.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
-import 'package:next_trip/features/cars/presentation/pages/car_datails_page.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carSearchPage/car_attribute_tag.dart';
 
 class CarCard extends StatelessWidget {
-  final Car car;
-  final CarController? controller;
+  final CarModel car;
+  final VoidCallback onTap;
 
-  const CarCard({super.key, required this.car, this.controller});
+  const CarCard({super.key, required this.car, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        controller?.selectCar(car);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => CarDetailsPage(car: car)),
-        );
-      },
+      onTap: onTap,
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:next_trip/core/utils/form_validators.dart';
 import 'package:next_trip/features/bookings/data/controllers/car_booking_controller.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 
 enum BookingStepType { dateTime, guestInfo }
 
 class BookingFormStep extends StatefulWidget {
   final CarBookingController controller;
-  final Car car;
+  final CarModel car;
   final BookingStepType stepType;
 
   const BookingFormStep({
@@ -56,7 +56,6 @@ class _BookingFormStepState extends State<BookingFormStep> {
       text: widget.controller.returnLocation,
     );
 
-    // Set default pickup location
     if (_pickupLocationController.text.isEmpty) {
       _pickupLocationController.text = 'Aeropuerto';
       widget.controller.setPickupLocation(_pickupLocationController.text);

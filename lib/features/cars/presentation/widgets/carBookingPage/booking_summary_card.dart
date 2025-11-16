@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:next_trip/features/bookings/data/controllers/car_booking_controller.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 
 class BookingSummaryCard extends StatelessWidget {
   final CarBookingController controller;
-  final Car car;
+  final CarModel car;
 
   const BookingSummaryCard({
     super.key,

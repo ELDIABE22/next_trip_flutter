@@ -22,7 +22,7 @@ import 'package:next_trip/features/flights/domain/usecases/search_return_flights
 import 'package:next_trip/features/flights/infrastructure/datasources/flight_remote_datasource.dart';
 import 'package:next_trip/features/flights/infrastructure/repositories/flight_repository_impl.dart';
 
-// Hotels imports
+// Hotel imports
 import 'package:next_trip/features/hotels/infrastructure/datasources/hotel_remote_datasource.dart';
 import 'package:next_trip/features/hotels/application/bloc/hotel_bloc.dart';
 import 'package:next_trip/features/hotels/domain/repositories/hotel_repository.dart';
@@ -33,6 +33,15 @@ import 'package:next_trip/features/hotels/domain/usecases/get_hotels_by_city_use
 import 'package:next_trip/features/hotels/domain/usecases/get_hotels_stream_usecase.dart';
 import 'package:next_trip/features/hotels/domain/usecases/hotel_refresh_usecase.dart';
 import 'package:next_trip/features/hotels/infrastructure/repositories/hotel_repository_impl.dart';
+
+// Car imports
+import 'package:next_trip/features/cars/application/bloc/car_bloc.dart';
+import 'package:next_trip/features/cars/domain/repositories/car_repository.dart';
+import 'package:next_trip/features/cars/domain/usecases/get_car_by_id_usecase.dart';
+import 'package:next_trip/features/cars/domain/usecases/get_cars_by_city_usecase.dart';
+import 'package:next_trip/features/cars/domain/usecases/search_cars_usecase.dart';
+import 'package:next_trip/features/cars/infrastructure/datasources/car_remote_datasource.dart';
+import 'package:next_trip/features/cars/infrastructure/repositories/car_repository_impl.dart';
 
 // Flight Booking imports
 import 'package:next_trip/features/bookings/domain/usecases/flight_booking/create_booking_usecase.dart'
@@ -254,6 +263,33 @@ void setupDependencies() {
       createBookingUseCase: Get.find(tag: 'hotel_create'),
       getBookingsByUserUseCase: Get.find<GetBookingsByUserUseCase>(),
       cancelBookingUseCase: Get.find(tag: 'hotel_cancel'),
+    ),
+    permanent: true,
+  );
+
+  // --- CAR ---
+
+  // Data sources
+  Get.lazyPut<CarRemoteDataSource>(
+    () => CarRemoteDataSource(firestore: Get.find<FirebaseFirestore>()),
+  );
+
+  // Repositories
+  Get.lazyPut<CarRepository>(
+    () => CarRepositoryImpl(remoteDataSource: Get.find<CarRemoteDataSource>()),
+  );
+
+  // Use cases
+  Get.lazyPut(() => GetCarByIdUseCase(Get.find<CarRepository>()));
+  Get.lazyPut(() => GetCarsByCityUseCase(Get.find<CarRepository>()));
+  Get.lazyPut(() => SearchCarsUseCase(Get.find<CarRepository>()));
+
+  // Bloc
+  Get.put<CarBloc>(
+    CarBloc(
+      getCarByIdUseCase: Get.find<GetCarByIdUseCase>(),
+      getCarsByCityUseCase: Get.find<GetCarsByCityUseCase>(),
+      searchCarsUseCase: Get.find<SearchCarsUseCase>(),
     ),
     permanent: true,
   );

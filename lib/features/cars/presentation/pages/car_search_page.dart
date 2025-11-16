@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:next_trip/core/utils/flight_prefs.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/core/widgets/page_layout.dart';
-import 'package:next_trip/features/cars/data/controllers/car_controller.dart';
+import 'package:next_trip/features/cars/application/bloc/car.state.dart';
+import 'package:next_trip/features/cars/application/bloc/car_bloc.dart';
+import 'package:next_trip/features/cars/application/bloc/car_event.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
+import 'package:next_trip/features/cars/presentation/pages/car_datails_page.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carSearchPage/car_card.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carSearchPage/car_search_form.dart';
 
@@ -14,8 +19,6 @@ class CarSearchPage extends StatefulWidget {
 }
 
 class _CarSearchPageState extends State<CarSearchPage> {
-  late final CarController _carController;
-
   int selectedIndex = 2;
   String? destinationCity;
   bool _isInitialized = false;
@@ -24,21 +27,9 @@ class _CarSearchPageState extends State<CarSearchPage> {
   @override
   void initState() {
     super.initState();
-    _carController = CarController(
-      onStateChanged: () {
-        if (mounted) setState(() {});
-      },
-    );
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeData();
     });
-  }
-
-  @override
-  void dispose() {
-    _carController.dispose();
-    super.dispose();
   }
 
   Future<void> _initializeData() async {
@@ -64,14 +55,16 @@ class _CarSearchPageState extends State<CarSearchPage> {
 
   Future<void> _setupCarStream() async {
     if (destinationCity != null && destinationCity!.isNotEmpty) {
-      _carController.loadCarsByCity(destinationCity!);
-    } else {
-      _carController.loadAvailableCars();
+      context.read<CarBloc>().add(
+        LoadCarsByCityRequested(city: destinationCity!),
+      );
     }
   }
 
   Future<void> _refreshCars() async {
-    await _carController.refresh();
+    context.read<CarBloc>().add(
+      LoadCarsByCityRequested(city: destinationCity!),
+    );
   }
 
   void onItemTapped(int index) {
@@ -85,14 +78,16 @@ class _CarSearchPageState extends State<CarSearchPage> {
       _activeFilters = filters;
     });
 
-    _carController.searchCars(
-      city: destinationCity,
-      minPassengers: filters['minPassengers'],
-      maxPrice: filters['maxPrice'],
-      category: filters['category'],
-      transmission: filters['transmission'],
-      fuelType: filters['fuelType'],
-      isAvailable: true,
+    context.read<CarBloc>().add(
+      SearchCarsRequested(
+        city: destinationCity,
+        minPassengers: filters['minPassengers'],
+        maxPrice: filters['maxPrice'],
+        category: filters['category'],
+        transmission: filters['transmission'],
+        fuelType: filters['fuelType'],
+        isAvailable: true,
+      ),
     );
   }
 
@@ -102,188 +97,196 @@ class _CarSearchPageState extends State<CarSearchPage> {
     });
 
     if (destinationCity != null && destinationCity!.isNotEmpty) {
-      _carController.loadCarsByCity(destinationCity!);
-    } else {
-      _carController.loadAvailableCars();
+      context.read<CarBloc>().add(
+        LoadCarsByCityRequested(city: destinationCity!),
+      );
     }
   }
 
-  Widget _buildCarsList() {
-    if (_carController.isLoading && _carController.cars.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text(
-              'Cargando carros...',
-              style: TextStyle(fontSize: 16, color: Colors.black),
-            ),
-          ],
-        ),
-      );
-    }
+  Future<void> _navigateToDetails(CarModel car) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CarDetailsPage(car: car)),
+    );
+    if (!mounted) return;
+    context.read<CarBloc>().add(
+      LoadCarsByCityRequested(city: destinationCity!),
+    );
+  }
 
-    if (_carController.hasError && _carController.cars.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 16),
-            const Text(
-              'Error al cargar carros',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                _carController.errorMessage ?? 'Error desconocido',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.black),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
+  Widget _buildCarsList() {
+    return BlocBuilder<CarBloc, CarState>(
+      builder: (context, state) {
+        if (state is CarLoading) {
+          return const Center(
+            child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CustomButton(
-                  onPressed: () {
-                    _carController.clearError();
-                    _carController.loadAvailableCars();
-                  },
-                  text: 'Reintentar',
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: () {
-                    _carController.clearError();
-                    setState(() => destinationCity = null);
-                    _carController.listenToCarsStream();
-                  },
-                  child: const Text('Ver todos'),
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  'Cargando carros...',
+                  style: TextStyle(fontSize: 16, color: Colors.black),
                 ),
               ],
             ),
-          ],
-        ),
-      );
-    }
+          );
+        }
 
-    if (_carController.cars.isEmpty && !_carController.isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.directions_car_outlined,
-              size: 64,
-              color: Colors.black,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _activeFilters != null
-                  ? 'No se encontraron carros con los filtros aplicados'
-                  : destinationCity != null
-                  ? 'No hay carros disponibles en $destinationCity'
-                  : 'No se encontraron carros disponibles',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            if (_activeFilters != null)
-              CustomButton(
-                onPressed: _handleClearFilters,
-                text: 'Limpiar filtros',
-              )
-            else
-              CustomButton(
-                onPressed: () {
-                  setState(() => destinationCity = null);
-                  _carController.loadAvailableCars();
-                },
-                text: 'Ver todos los carros',
-              ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      );
-    }
-
-    // Success state
-    return RefreshIndicator(
-      onRefresh: _refreshCars,
-      child: Column(
-        children: [
-          if (_activeFilters != null) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.filter_list, size: 16, color: Colors.black),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Filtros aplicados',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+        if (state is CarError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error al cargar carros',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CustomButton(
+                      onPressed: () {
+                        context.read<CarBloc>().add(
+                          LoadCarsByCityRequested(city: destinationCity!),
+                        );
+                      },
+                      text: 'Reintentar',
                     ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
+        if (state is CarListLoaded) {
+          if (state.cars.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.directions_car_outlined,
+                    size: 64,
+                    color: Colors.black,
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _handleClearFilters,
-                    child: const Icon(
-                      Icons.close,
-                      size: 16,
+                  const SizedBox(height: 16),
+                  Text(
+                    _activeFilters != null
+                        ? 'No se encontraron carros con los filtros aplicados'
+                        : destinationCity != null
+                        ? 'No hay carros disponibles en $destinationCity'
+                        : 'No se encontraron carros disponibles',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                       color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  if (_activeFilters != null)
+                    CustomButton(
+                      onPressed: _handleClearFilters,
+                      text: 'Limpiar filtros',
+                    )
+                  else
+                    CustomButton(
+                      onPressed: () {
+                        setState(() => destinationCity = null);
+                        context.read<CarBloc>().add(
+                          LoadCarsByCityRequested(city: destinationCity!),
+                        );
+                      },
+                      text: 'Reintentar',
+                    ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: _refreshCars,
+            child: Column(
+              children: [
+                if (_activeFilters != null) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.black.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.filter_list,
+                          size: 16,
+                          color: Colors.black,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Filtros aplicados',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: _handleClearFilters,
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
-              ),
-            ),
-          ],
 
-          if (_carController.isLoading && _carController.hasCars)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: LinearProgressIndicator(),
-            ),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: state.cars.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 20),
+                  itemBuilder: (context, index) {
+                    final car = state.cars[index];
+                    return CarCard(
+                      car: car,
+                      onTap: () => _navigateToDetails(car),
+                    );
+                  },
+                ),
 
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _carController.cars.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 20),
-            itemBuilder: (context, index) {
-              final car = _carController.cars[index];
-              return CarCard(car: car, controller: _carController);
-            },
-          ),
-
-          if (_carController.hasCars)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Mostrando ${_carController.cars.length} carros',
-                style: TextStyle(color: Colors.black, fontSize: 14),
-              ),
+                if (state.cars.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Mostrando ${state.cars.length} carros',
+                      style: TextStyle(color: Colors.black, fontSize: 14),
+                    ),
+                  ),
+              ],
             ),
-        ],
-      ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 

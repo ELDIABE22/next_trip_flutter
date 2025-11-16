@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 import '../models/car_booking_model.dart';
 
 class CarBookingService {
@@ -9,7 +9,7 @@ class CarBookingService {
 
   // Crear nueva reserva
   Future<CarBooking> createBooking({
-    required Car car,
+    required CarModel car,
     required String userId,
     required String guestName,
     required String guestEmail,

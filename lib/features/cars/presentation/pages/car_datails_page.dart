@@ -1,59 +1,30 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/core/constants/app_constants_colors.dart';
-import 'package:next_trip/features/cars/data/controllers/car_controller.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/application/bloc/car.state.dart';
+import 'package:next_trip/features/cars/application/bloc/car_bloc.dart';
+import 'package:next_trip/features/cars/application/bloc/car_event.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 import 'package:next_trip/features/cars/presentation/pages/car_booking_page.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carDetailsPage/car_attribute_card.dart';
 import 'package:next_trip/core/widgets/bottom_reserve_panel.dart';
 
 class CarDetailsPage extends StatefulWidget {
-  final Car? car;
-  final String? carId;
+  final CarModel? car;
 
-  const CarDetailsPage({super.key, this.car, this.carId});
+  const CarDetailsPage({super.key, this.car});
 
   @override
   State<CarDetailsPage> createState() => _CarDetailsPageState();
 }
 
 class _CarDetailsPageState extends State<CarDetailsPage> {
-  late final CarController _carController;
-  Car? _currentCar;
-
   @override
   void initState() {
     super.initState();
-    _setupController();
-    _initializeCar();
-  }
-
-  void _setupController() {
-    _carController = CarController(
-      onStateChanged: () {
-        if (mounted) setState(() {});
-      },
-    );
-  }
-
-  void _initializeCar() {
-    if (widget.car != null) {
-      _currentCar = widget.car;
-      _carController.selectCar(widget.car!);
-    } else if (widget.carId != null) {
-      _carController.loadCarById(widget.carId!);
-    }
-  }
-
-  @override
-  void dispose() {
-    _carController.dispose();
-    super.dispose();
-  }
-
-  Car? get _displayCar {
-    return _currentCar ?? _carController.selectedCar ?? widget.car;
+    context.read<CarBloc>().add(LoadCarByIdRequested(widget.car!.id));
   }
 
   @override
@@ -69,142 +40,136 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
   }
 
   Widget _buildBody() {
-    final car = _displayCar;
-
-    // Loading state
-    if (_carController.isLoading && car == null) {
-      return Container(
-        decoration: AppConstantsColors.radialBackground,
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(color: Colors.white),
-              SizedBox(height: 16),
-              Text(
-                'Cargando detalles del carro...',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Error state
-    if (car == null && _carController.hasError) {
-      return Container(
-        decoration: AppConstantsColors.radialBackground,
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 64, color: Colors.white),
-                const SizedBox(height: 16),
-                const Text(
-                  'Error al cargar el carro',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+    return BlocBuilder<CarBloc, CarState>(
+      builder: (context, state) {
+        if (state is CarLoading) {
+          return Container(
+            decoration: AppConstantsColors.radialBackground,
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: Colors.black),
+                  SizedBox(height: 16),
+                  Text(
+                    'Cargando detalles del carro...',
+                    style: TextStyle(color: Colors.black, fontSize: 16),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _carController.errorMessage ?? 'Error desconocido',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[300]),
-                ),
-                const SizedBox(height: 16),
-                Row(
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (state is CarError) {
+          return Container(
+            decoration: AppConstantsColors.radialBackground,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (widget.carId != null)
-                      ElevatedButton(
-                        onPressed: () {
-                          _carController.clearError();
-                          _carController.loadCarById(widget.carId!);
-                        },
-                        child: const Text('Reintentar'),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Error al cargar el carro',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
-                    if (widget.carId != null) const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Volver'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (widget.car != null)
+                          ElevatedButton(
+                            onPressed: () {
+                              context.read<CarBloc>().add(
+                                LoadCarByIdRequested(widget.car!.id),
+                              );
+                            },
+                            child: const Text('Reintentar'),
+                          ),
+                        if (widget.car != null) const SizedBox(width: 8),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      );
-    }
+          );
+        }
 
-    // No car state
-    if (car == null) {
-      return Container(
-        decoration: AppConstantsColors.radialBackground,
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+        if (state is CarLoaded) {
+          if (state.car == null) {
+            return Container(
+              decoration: AppConstantsColors.radialBackground,
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.directions_car_outlined,
+                      size: 64,
+                      color: Colors.white,
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Carro no encontrado',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return Stack(
             children: [
-              Icon(
-                Icons.directions_car_outlined,
-                size: 64,
-                color: Colors.white,
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Carro no encontrado',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              Container(
+                decoration: AppConstantsColors.radialBackground,
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildCarImage(state.car!)),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            _buildCarDetails(state.car!),
+                            const SizedBox(height: 20),
+                            _buildCarAttributes(state.car!),
+                            const SizedBox(height: 20),
+                            _buildDescription(state.car!),
+                            const SizedBox(height: 100),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              _buildBottomReservePanel(state.car!),
             ],
-          ),
-        ),
-      );
-    }
-
-    // Success state - show car details
-    return Stack(
-      children: [
-        Container(
-          decoration: AppConstantsColors.radialBackground,
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: _buildCarImage(car)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      _buildCarDetails(car),
-                      const SizedBox(height: 20),
-                      _buildCarAttributes(car),
-                      const SizedBox(height: 20),
-                      _buildDescription(car),
-                      const SizedBox(height: 100),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        _buildBottomReservePanel(car),
-      ],
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 
-  Widget _buildCarImage(Car car) {
+  Widget _buildCarImage(CarModel car) {
     return SizedBox(
       height: 350,
       width: double.infinity,
@@ -236,7 +201,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  Widget _buildCarDetails(Car car) {
+  Widget _buildCarDetails(CarModel car) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -297,7 +262,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  Widget _buildCarAttributes(Car car) {
+  Widget _buildCarAttributes(CarModel car) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -328,7 +293,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  Widget _buildDescription(Car car) {
+  Widget _buildDescription(CarModel car) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -364,7 +329,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  Widget _buildAdditionalInfo(Car car) {
+  Widget _buildAdditionalInfo(CarModel car) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -407,7 +372,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  Widget _buildBottomReservePanel(Car car) {
+  Widget _buildBottomReservePanel(CarModel car) {
     return BottomReservePanel(
       totalPrice: '${car.formattedPrice} COP',
       dateRange: 'por día de alquiler',
@@ -416,7 +381,7 @@ class _CarDetailsPageState extends State<CarDetailsPage> {
     );
   }
 
-  void _handleReservation(Car car) {
+  void _handleReservation(CarModel car) {
     Navigator.push(
       context,
       MaterialPageRoute(

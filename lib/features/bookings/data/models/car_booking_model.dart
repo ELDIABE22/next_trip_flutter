@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 
 enum BookingStatus {
   confirmed, // Confirmada
@@ -16,7 +16,7 @@ class CarBooking {
   final String carId;
 
   // Información del carro (objeto anidado)
-  final Car carDetails;
+  final CarModel carDetails;
 
   // Información de la reserva
   final DateTime pickupDate;
@@ -83,9 +83,9 @@ class CarBooking {
       userId: map['userId'] ?? '',
       carId: map['carId'] ?? '',
 
-      carDetails: Car.fromMap(
-        map['car_details'] as Map<String, dynamic>? ?? {},
+      carDetails: CarModel.fromMap(
         map['carId'] ?? '',
+        map['car_details'] as Map<String, dynamic>? ?? {},
       ),
 
       pickupDate: (map['pickupDate'] as Timestamp).toDate(),
@@ -164,7 +164,7 @@ class CarBooking {
   factory CarBooking.fromCar({
     required String id,
     required String userId,
-    required Car car,
+    required CarModel car,
     required DateTime pickupDate,
     required DateTime returnDate,
     required TimeOfDay pickupTime,
@@ -310,7 +310,7 @@ class CarBooking {
     String? id,
     String? userId,
     String? carId,
-    Car? carDetails,
+    CarModel? carDetails,
     DateTime? pickupDate,
     DateTime? returnDate,
     TimeOfDay? pickupTime,

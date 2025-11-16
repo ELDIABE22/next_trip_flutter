@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:next_trip/core/widgets/appbar.dart';
 import 'package:next_trip/core/widgets/custom_button.dart';
 import 'package:next_trip/features/bookings/data/controllers/car_booking_controller.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carBookingPage/booking_form_step.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carBookingPage/booking_summary_card.dart';
 import 'package:next_trip/features/cars/presentation/widgets/carBookingPage/car_info_card.dart';
 import 'package:next_trip/routes/app_routes.dart';
 
 class CarBookingPage extends StatefulWidget {
-  final Car car;
+  final CarModel car;
   final String userId;
 
   const CarBookingPage({super.key, required this.car, required this.userId});

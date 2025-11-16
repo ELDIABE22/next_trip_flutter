@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/domain/entities/car.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 import '../models/car_booking_model.dart';
 import '../services/car_booking_service.dart';
 
@@ -159,7 +160,10 @@ class CarBookingController {
   }
 
   // Crear una nueva reserva
-  Future<bool> createBooking({required Car car, required String userId}) async {
+  Future<bool> createBooking({
+    required CarModel car,
+    required String userId,
+  }) async {
     if (!canCreateBooking) {
       _setError('Información incompleta para crear la reserva');
       return false;

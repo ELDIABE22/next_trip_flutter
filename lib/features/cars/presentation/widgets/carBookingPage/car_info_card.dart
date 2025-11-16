@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:next_trip/features/cars/data/models/car_model.dart';
+import 'package:next_trip/features/cars/infrastructure/models/car_model.dart';
 
 class CarInfoCard extends StatelessWidget {
-  final Car car;
+  final CarModel car;
 
   const CarInfoCard({super.key, required this.car});
 
